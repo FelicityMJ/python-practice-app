@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Python Practice</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f5f8;
+      color: #172033;
+    }
+    header {
+      background: #172033;
+      color: white;
+      padding: 18px;
+      text-align: center;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+    h1 { margin: 0; font-size: 1.6rem; }
+    h2 { margin-top: 0; font-size: 1.2rem; }
+    code {
+      background: #eef1f5;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 230px;
+      padding: 14px;
+      border: 2px solid #cfd6df;
+      border-radius: 10px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 16px;
+      line-height: 1.5;
+      resize: vertical;
+      tab-size: 4;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #runButton { background: #1f6feb; color: white; }
+    #checkButton { background: #16803c; color: white; }
+    #resetButton { background: #e4e8ee; color: #172033; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    pre {
+      min-height: 72px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #101722;
+      color: #e8eef8;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: Consolas, "Courier New", monospace;
+    }
+    #feedback {
+      display: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-weight: bold;
+    }
+    .success { display: block !important; background: #dcf7e5; color: #105d2b; }
+    .try-again { display: block !important; background: #fff0d3; color: #754c00; }
+    .error { display: block !important; background: #ffe1e1; color: #831b1b; }
+    .loading { font-weight: bold; color: #5b6472; }
+    @media (max-width: 520px) {
+      .buttons { grid-template-columns: 1fr; }
+      textarea { min-height: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Python Practice</h1>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Challenge 1: Calculate the total</h2>
+      <p>Create two variables called <code>score</code> and <code>bonus</code>.</p>
+      <p>Set <code>score</code> to <strong>7</strong>, set <code>bonus</code> to <strong>3</strong>, then print their total.</p>
+      <p><strong>Expected output:</strong> 10</p>
+    </section>
+
+    <section class="card">
+      <p id="loadingMessage" class="loading">Loading Python...</p>
+
+      <textarea id="codeEditor" spellcheck="false">score = 7
+bonus = 3
+
+# Print the total below
+</textarea>
+
+      <div class="buttons">
+        <button id="runButton" disabled>Run</button>
+        <button id="checkButton" disabled>Check answer</button>
+        <button id="resetButton">Reset</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Program output</h2>
+      <pre id="output">Python is loading...</pre>
+      <div id="feedback"></div>
+    </section>
+  </main>
+
+  <script>
+    const starterCode = `score = 7
+bonus = 3
+
+# Print the total below
+`;
+
+    const editor = document.getElementById("codeEditor");
+    const outputBox = document.getElementById("output");
+    const feedbackBox = document.getElementById("feedback");
+    const loadingMessage = document.getElementById("loadingMessage");
+    const runButton = document.getElementById("runButton");
+    const checkButton = document.getElementById("checkButton");
+    const resetButton = document.getElementById("resetButton");
+
+    let pyodide = null;
+    let lastOutput = "";
+
+    function showFeedback(message, className) {
+      feedbackBox.className = className;
+      feedbackBox.textContent = message;
+    }
+
+    function clearFeedback() {
+      feedbackBox.className = "";
+      feedbackBox.textContent = "";
+    }
+
+    async function startPython() {
+      try {
+        pyodide = await loadPyodide();
+        loadingMessage.textContent = "Python is ready.";
+        outputBox.textContent = "Press Run to test your program.";
+        runButton.disabled = false;
+        checkButton.disabled = false;
+      } catch (error) {
+        loadingMessage.textContent = "Python could not load.";
+        outputBox.textContent = String(error);
+        showFeedback("Check your internet connection and reload the page.", "error");
+      }
+    }
+
+    async function runStudentCode() {
+      clearFeedback();
+      outputBox.textContent = "Running...";
+      runButton.disabled = true;
+      checkButton.disabled = true;
+
+      try {
+        pyodide.globals.set("student_code", editor.value);
+
+        const result = await pyodide.runPythonAsync(`
+import io
+import sys
+import traceback
+
+_buffer = io.StringIO()
+_old_stdout = sys.stdout
+_old_stderr = sys.stderr
+sys.stdout = _buffer
+sys.stderr = _buffer
+
+try:
+    exec(student_code, {})
+except Exception:
+    traceback.print_exc()
+finally:
+    sys.stdout = _old_stdout
+    sys.stderr = _old_stderr
+
+_buffer.getvalue()
+        `);
+
+        lastOutput = String(result);
+        outputBox.textContent = lastOutput || "(No output)";
+        return lastOutput;
+      } catch (error) {
+        lastOutput = String(error);
+        outputBox.textContent = lastOutput;
+        showFeedback("Your program could not run. Read the error message above.", "error");
+        return lastOutput;
+      } finally {
+        runButton.disabled = false;
+        checkButton.disabled = false;
+      }
+    }
+
+    runButton.addEventListener("click", runStudentCode);
+
+    checkButton.addEventListener("click", async () => {
+      const result = await runStudentCode();
+      const cleanedOutput = result.trim();
+
+      if (cleanedOutput === "10") {
+        showFeedback("Correct! Your program printed 10.", "success");
+      } else if (cleanedOutput.includes("Traceback")) {
+        showFeedback("There is an error in the program. Use the message above to help you fix it.", "error");
+      } else {
+        showFeedback("Not quite. Your program should print only the number 10.", "try-again");
+      }
+    });
+
+    resetButton.addEventListener("click", () => {
+      editor.value = starterCode;
+      lastOutput = "";
+      outputBox.textContent = "Press Run to test your program.";
+      clearFeedback();
+    });
+
+    editor.addEventListener("keydown", (event) => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        editor.value = editor.value.substring(0, start) + "    " + editor.value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + 4;
+      }
+    });
+
+    startPython();
+  </script>
+</body>
+</html>
