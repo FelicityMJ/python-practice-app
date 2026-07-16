@@ -815,8 +815,10 @@ function progressDocumentId(taskId) {
 
 async function saveAttempt(correct) {
   const progressRef = doc(db, "progress", progressDocumentId(currentTask.id));
-  const existing = await getDoc(progressRef);
-  const old = existing.exists() ? existing.data() : {};
+  // Use the progress already loaded for this pupil. On a pupil's first attempt,
+  // the Firestore document does not exist yet, so trying to read it first can
+  // be rejected by rules that rely on resource.data.
+  const old = currentProgress.get(currentTask.id) || {};
   const attempts = (old.attempts || 0) + 1;
   const data = {
     classId: currentProfile.classId,
@@ -839,8 +841,7 @@ async function saveAttempt(correct) {
 async function saveHintUse() {
   if (!currentTask || !auth.currentUser || currentProfile?.role !== "student") return;
   const progressRef = doc(db, "progress", progressDocumentId(currentTask.id));
-  const existing = await getDoc(progressRef);
-  const old = existing.exists() ? existing.data() : {};
+  const old = currentProgress.get(currentTask.id) || {};
   const data = {
     classId: currentProfile.classId,
     userId: auth.currentUser.uid,
