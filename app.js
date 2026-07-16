@@ -22,7 +22,7 @@ import {
   writeBatch,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-import { TASKS } from "./tasks.js";
+import { TASKS } from "./tasks.js?v=3.1";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNCOKfjQf6FHQQj3squE6NZtZYdyuwsLw",
@@ -32,6 +32,9 @@ const firebaseConfig = {
   messagingSenderId: "680319448297",
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
+
+const APP_VERSION = "3.1";
+console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
@@ -800,8 +803,9 @@ elements.checkButton.addEventListener("click", async () => {
       elements.challengeStatus.className = "status-pill working";
     }
   } catch (error) {
-    console.error(error);
-    elements.feedbackBox.textContent = error.message || "The answer could not be checked.";
+    console.error("Check/save failed:", error.code, error.message, error);
+    const code = error.code ? ` [${error.code}]` : "";
+    elements.feedbackBox.textContent = `${error.message || "The answer could not be checked."}${code}`;
     elements.feedbackBox.className = "feedback error";
   } finally {
     elements.runButton.disabled = false;
@@ -834,7 +838,11 @@ async function saveAttempt(correct) {
     lastCode: elements.codeEditor.value,
     lastAttemptAt: serverTimestamp()
   };
-  await setDoc(progressRef, data, { merge: true });
+  if (currentProgress.has(currentTask.id)) {
+    await setDoc(progressRef, data, { merge: true });
+  } else {
+    await setDoc(progressRef, data);
+  }
   currentProgress.set(currentTask.id, data);
 }
 
@@ -856,6 +864,10 @@ async function saveHintUse() {
     lastCode: elements.codeEditor.value,
     lastAttemptAt: serverTimestamp()
   };
-  await setDoc(progressRef, data, { merge: true });
+  if (currentProgress.has(currentTask.id)) {
+    await setDoc(progressRef, data, { merge: true });
+  } else {
+    await setDoc(progressRef, data);
+  }
   currentProgress.set(currentTask.id, data);
 }
