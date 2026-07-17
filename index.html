@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Python practice with classes, saved progress and code visualisation">
+  <meta name="description" content="Complete National 5 Software Design and Development pathway with Python, design, testing and exam practice">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=4.4">
+  <link rel="stylesheet" href="styles.css?v=5.0">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
@@ -590,7 +590,7 @@
   </main>
 
   <footer>
-    <p>Python Practice prototype v4.4 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v5.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -623,11 +623,11 @@
         "The application is taking longer than expected to start. Please wait a few more seconds. " +
         "If it does not open, reload once or check the technical message that appears."
       );
-    }, 15000);
+    }, 30000);
   </script>
 
   <script type="module">
-    import("./app-v4-4.js")
+    import("./app-v5.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -635,7 +635,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v4-4.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v5.js again."
           );
         }
       })
@@ -645,7 +645,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v4-4.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v5.js again and make sure both filenames are exact."
         );
       });
   </script>
