@@ -696,7 +696,14 @@ footer { text-align: center; color: var(--muted); padding: 20px; font-size: .9re
 .game-setup-panel label { min-width:220px; flex:1; }
 .preview-notice { padding:12px 15px; border-radius:12px; background:#fff4cc; border:1px solid #e6c75a; color:#6b5000; }
 .debug-ocean { position:relative; height:190px; overflow:hidden; border-radius:16px; background:#72d7f5 url("debug-ocean.webp") center/cover no-repeat; margin:18px 0; border:3px solid #bfeeff; }
-.debug-ocean img { position:absolute; top:48%; transform:translateY(-50%); transition:left .25s linear; object-fit:contain; }
+.debug-ocean img {
+  position:absolute;
+  top:48%;
+  transform:translateY(-50%);
+  transition:left .25s linear, top .25s ease-out;
+  object-fit:contain;
+  will-change:left, top;
+}
 #debugShark { width:165px; left:7%; }
 #debugFish { width:110px; left:80%; }
 #debugTimer { position:absolute; top:12px; left:50%; transform:translateX(-50%); padding:7px 13px; border-radius:999px; background:rgba(16,24,44,.86); color:#fff; font-weight:800; }
@@ -736,3 +743,58 @@ footer { text-align: center; color: var(--muted); padding: 20px; font-size: .9re
 .truth-table tr.truth-correct { background:#e5f7e9; }
 .truth-table tr.truth-incorrect { background:#fde8e8; }
 @media (max-width:900px) { .game-menu-grid,.debug-stage-grid { grid-template-columns:1fr; } .games-lab-card { align-items:flex-start; flex-direction:column; } .logic-choice-grid { grid-template-columns:1fr; } }
+
+
+/* v5.1.3 — corrected shark chase and original game-over animation */
+#debugFish.fish-escaping {
+  transition: left .85s ease-in, top .25s ease-out;
+}
+
+.game-over-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 13, 28, .88);
+}
+
+.game-over-overlay.hidden {
+  display: none;
+}
+
+.game-over-card {
+  width: min(560px, 94vw);
+  padding: 22px;
+  border-radius: 18px;
+  background: #080b12;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .55);
+}
+
+.game-over-card h2 {
+  margin-top: 0;
+  color: #fff;
+}
+
+.game-over-card img {
+  display: block;
+  width: min(480px, 100%);
+  height: auto;
+  margin: 0 auto 14px;
+  border-radius: 12px;
+  background: #000;
+}
+
+.game-over-card button {
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .debug-ocean img,
+  #debugFish.fish-escaping {
+    transition: none;
+  }
+}
