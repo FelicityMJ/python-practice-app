@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Complete National 5 Software Design and Development pathway with Python, design, testing and exam practice">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=5.1.4">
+  <link rel="stylesheet" href="styles.css?v=5.1.5">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
@@ -680,14 +680,20 @@
   <div id="debugGameOverOverlay" class="game-over-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="debugGameOverTitle">
     <div class="game-over-card">
       <h2 id="debugGameOverTitle">The shark caught the fish!</h2>
-      <img id="debugGameOverGif" data-gif-src="game_over.gif" alt="Animated shark game-over sequence">
-      <p>Time ran out. Watch the sequence, then review the repair.</p>
+      <div id="debugGameOverMedia" class="game-over-media">
+        <video id="debugGameOverVideo" preload="auto" muted playsinline aria-label="Animated shark game-over sequence">
+          <source src="game_over.mp4" type="video/mp4">
+        </video>
+        <img id="debugGameOverGif" class="hidden" data-gif-src="game_over.gif" alt="Animated shark game-over sequence">
+      </div>
+      <p id="debugGameOverStatus">Time ran out. Watch the sequence, then review the repair.</p>
+      <button id="playDebugGameOverButton" type="button" class="hidden">Play shark ending</button>
       <button id="closeDebugGameOverButton" type="button" class="hidden">See the repair</button>
     </div>
   </div>
 
   <footer>
-    <p>Python Practice prototype v5.1.4 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v5.1.5 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -724,7 +730,7 @@
   </script>
 
   <script type="module">
-    import("./app-v5-1-4.js")
+    import("./app-v5-1-5.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -732,7 +738,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v5-1-4.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v5-1-5.js again."
           );
         }
       })
@@ -742,7 +748,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v5-1-4.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v5-1-5.js again and make sure both filenames are exact."
         );
       });
   </script>
