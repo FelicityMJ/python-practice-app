@@ -188,6 +188,12 @@ const ACTIVITIES = [
     title: "Official paper: Readability", prerequisiteIds: ["SDD-PY-01-09"], skills: ["readability", "comments", "identifiers"],
     year: 2025, questionReference: "Question 3(b)", pageReference: "Paper page 3",
     officialUrl: `${paper2025}#page=3`,
+    marks: 1,
+    markingPoints: [
+      "Use meaningful variable names that make the purpose of stored values clear.",
+      "Use consistent indentation to make the program structure easier to follow."
+    ],
+    modelAnswer: "Use meaningful variable names so it is clear what each value represents.",
     description: "Open the official 2025 paper and attempt Question 3(b). The app links to the paper rather than reproducing the copyrighted question."
   }),
 
@@ -280,6 +286,12 @@ const ACTIVITIES = [
     title: "Official paper: Data types", prerequisiteIds: ["SDD-PY-02-02"], skills: ["data-types", "integer", "string"],
     year: 2025, questionReference: "Question 7(a)", pageReference: "Paper page 4",
     officialUrl: `${paper2025}#page=4`,
+    marks: 2,
+    markingPoints: [
+      "passengerAge should use the integer data type.",
+      "destination should use the string data type."
+    ],
+    modelAnswer: "passengerAge: integer; destination: string.",
     description: "Open the official 2025 paper and attempt Question 7(a), which asks you to select suitable data types."
   }),
 
@@ -391,6 +403,14 @@ const ACTIVITIES = [
     title: "Official paper: Inputs, processes and outputs", prerequisiteIds: ["SDD-PY-03-09"], skills: ["analysis", "input", "process", "output"],
     year: 2025, questionReference: "Question 10(a)", pageReference: "Paper page 8",
     officialUrl: `${paper2025}#page=8`,
+    marks: 3,
+    markingPoints: [
+      "Check that the username exists.",
+      "Check that the password entered matches the user's password and has the required length.",
+      "Validate that the gift-card number exists or is valid.",
+      "Calculate or update the account balance using the gift-card value."
+    ],
+    modelAnswer: "Check that the username exists, check that the password matches the user's stored password, validate the gift-card number, and add the card value to update the account balance. Any three suitable processes would gain the three marks.",
     description: "Open the official 2025 paper and attempt Question 10(a), which asks you to identify program processes."
   }),
 
@@ -487,6 +507,9 @@ const ACTIVITIES = [
     title: "Official paper: Calculation and assignment", prerequisiteIds: ["SDD-PY-04-03"], skills: ["calculation", "assignment", "exponentiation"],
     year: 2025, questionReference: "Question 3(a)", pageReference: "Paper page 3",
     officialUrl: `${paper2025}#page=3`,
+    marks: 1,
+    markingPoints: ["Square the entered value: 3 × 3 = 9."],
+    modelAnswer: "9",
     description: "Open the official 2025 paper and attempt Question 3(a), which asks you to trace a calculation and state the stored value."
   })
 ];
@@ -513,7 +536,7 @@ const firebaseConfig = {
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
 
-const APP_VERSION = "4.1.3";
+const APP_VERSION = "4.1.4";
 console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -546,6 +569,11 @@ let autoSaveTimer = null;
 let codeIsDirty = false;
 let saveInProgress = false;
 let visualiserCompletionSaving = false;
+let officialResponseAutoSaveTimer = null;
+let officialResponseDirty = false;
+let officialResponseSaving = false;
+let activeOfficialResponseInput = null;
+let activeOfficialSaveStatus = null;
 
 const LEGACY_ACTIVITY_MAP = {
   "variables-01": "SDD-PY-02-05",
@@ -1050,6 +1078,9 @@ function updateContentTypeFields() {
   elements.contentAnswerLabel.classList.toggle("hidden", !isVideo);
   elements.contentYearLabel.classList.toggle("hidden", isVideo);
   elements.contentQuestionLabel.classList.toggle("hidden", isVideo);
+  elements.contentMarksLabel.classList.toggle("hidden", isVideo);
+  elements.contentMarkingPointsLabel.classList.toggle("hidden", isVideo);
+  elements.contentModelAnswerLabel.classList.toggle("hidden", isVideo);
 }
 
 function resetContentForm() {
@@ -1059,6 +1090,9 @@ function resetContentForm() {
   elements.contentTypeInput.value = "video";
   elements.contentOrderInput.value = "1.5";
   elements.contentYearInput.value = "2025";
+  elements.contentMarksInput.value = "1";
+  elements.contentMarkingPointsInput.value = "";
+  elements.contentModelAnswerInput.value = "";
   elements.contentAnswerInput.value = "1";
   elements.contentPublishedInput.checked = true;
   elements.contentRequiredInput.checked = false;
@@ -1107,6 +1141,9 @@ function beginEditCustomActivity(activity) {
   elements.contentSkillsInput.value = (activity.skills || []).join(", ");
   elements.contentYearInput.value = activity.year || 2025;
   elements.contentQuestionInput.value = activity.questionReference || "";
+  elements.contentMarksInput.value = activity.marks || 1;
+  elements.contentMarkingPointsInput.value = (activity.markingPoints || []).join("\n");
+  elements.contentModelAnswerInput.value = activity.modelAnswer || "";
   elements.contentCheckpointInput.value = activity.checkpoint?.prompt || "";
   elements.contentOptionsInput.value = (activity.checkpoint?.options || []).join("\n");
   elements.contentAnswerInput.value = Number(activity.checkpoint?.answer ?? 0) + 1;
@@ -1194,6 +1231,12 @@ elements.contentActivityForm.addEventListener("submit", async event => {
     data.year = Number(elements.contentYearInput.value || 2025);
     data.questionReference = elements.contentQuestionInput.value.trim();
     data.pageReference = "";
+    data.marks = Math.max(1, Number(elements.contentMarksInput.value || 1));
+    data.markingPoints = elements.contentMarkingPointsInput.value
+      .split("\n")
+      .map(item => item.trim())
+      .filter(Boolean);
+    data.modelAnswer = elements.contentModelAnswerInput.value.trim();
   }
   if (!editingCustomActivityId) data.createdAt = serverTimestamp();
   try {
@@ -1287,6 +1330,82 @@ function progressStatus(progress) {
   return { label: "Not started", className: "" };
 }
 
+
+function paperResponseStatus(response) {
+  if (response.completed) return "Reviewed";
+  if (response.submitted) return "Submitted";
+  if (response.writtenResponse !== undefined) return "Draft saved";
+  return "Opened";
+}
+
+function showPaperResponseDetails(response, member, activity) {
+  elements.paperResponseViewer.classList.remove("hidden");
+  elements.paperResponseViewer.innerHTML = `
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Official-paper response</p>
+        <h4>${escapeHtml(member?.displayName || "Pupil")} — ${escapeHtml(activity?.title || response.activityTitle || response.taskTitle || response.taskId)}</h4>
+        <p class="help-text">${escapeHtml(activity?.questionReference || "")} · ${paperResponseStatus(response)}</p>
+      </div>
+      <button id="closePaperResponseViewer" type="button" class="secondary small">Close response</button>
+    </div>
+    <div class="response-review-grid">
+      <section>
+        <h5>First submitted answer</h5>
+        <div class="response-text">${escapeHtml(response.originalSubmission || "No submitted answer yet.")}</div>
+      </section>
+      <section>
+        <h5>Latest saved answer</h5>
+        <div class="response-text">${escapeHtml(response.writtenResponse || "No answer saved.")}</div>
+      </section>
+    </div>
+    <div class="response-summary-row">
+      <span><strong>Self-assessed mark:</strong> ${response.selfAssessedMark !== undefined ? `${escapeHtml(response.selfAssessedMark)}/${escapeHtml(activity?.marks || "?")}` : "Not completed"}</span>
+      <span><strong>Model viewed:</strong> ${response.modelAnswerViewed ? "Yes" : "No"}</span>
+      <span><strong>Last activity:</strong> ${humanDate(response.lastActivityAt || response.lastSavedAt)}</span>
+    </div>
+    <section>
+      <h5>Pupil reflection</h5>
+      <div class="response-text">${escapeHtml(response.reflection || "No reflection recorded.")}</div>
+    </section>`;
+  elements.paperResponseViewer.querySelector("#closePaperResponseViewer").addEventListener("click", () => {
+    elements.paperResponseViewer.classList.add("hidden");
+    elements.paperResponseViewer.innerHTML = "";
+  });
+  elements.paperResponseViewer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function renderPaperResponses(classItem) {
+  const memberMap = new Map(classItem.members.map(member => [member.userId, member]));
+  const responses = classItem.progress
+    .filter(item => item.activityType === "official-paper" && (
+      item.paperOpened || item.writtenResponse !== undefined || item.submitted || item.completed
+    ))
+    .sort((a, b) => ((b.lastActivityAt || b.lastSavedAt)?.seconds || 0) - ((a.lastActivityAt || a.lastSavedAt)?.seconds || 0));
+
+  elements.paperResponseCount.textContent = `${responses.length} response${responses.length === 1 ? "" : "s"}`;
+  elements.paperResponsesBody.innerHTML = "";
+  responses.forEach(response => {
+    const member = memberMap.get(response.userId);
+    const activity = allActivities.find(item => item.id === response.taskId) || null;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><strong>${escapeHtml(member?.displayName || "Unknown pupil")}</strong></td>
+      <td>${escapeHtml(activity?.title || response.activityTitle || response.taskTitle || response.taskId)}</td>
+      <td>${paperResponseStatus(response)}</td>
+      <td>${response.selfAssessedMark !== undefined ? `${escapeHtml(response.selfAssessedMark)}/${escapeHtml(activity?.marks || "?")}` : "—"}</td>
+      <td>${humanDate(response.lastActivityAt || response.lastSavedAt)}</td>
+      <td><button type="button" class="secondary small">View answer</button></td>`;
+    row.querySelector("button").addEventListener("click", () => showPaperResponseDetails(response, member, activity));
+    elements.paperResponsesBody.appendChild(row);
+  });
+  if (!responses.length) {
+    elements.paperResponsesBody.innerHTML = `<tr><td colspan="6">No official-paper answers have been saved yet.</td></tr>`;
+  }
+  elements.paperResponseViewer.classList.add("hidden");
+  elements.paperResponseViewer.innerHTML = "";
+}
+
 function showClassDetails(classItem) {
   const coreIds = new Set(requiredActivities().map(activity => activity.id));
   const coreCount = coreIds.size;
@@ -1296,10 +1415,12 @@ function showClassDetails(classItem) {
   const completedCount = classItem.progress.filter(item => item.completed && coreIds.has(item.taskId)).length;
   const activeCount = classItem.progress.filter(item => !item.completed).length;
   const attempts = classItem.progress.reduce((sum, item) => sum + (item.attempts || 0), 0);
+  const paperResponseTotal = classItem.progress.filter(item => item.activityType === "official-paper" && (item.writtenResponse !== undefined || item.submitted)).length;
   elements.classStats.innerHTML = [
     statCard(classItem.members.length, "Pupils"),
     statCard(completedCount, "Core activities completed"),
-    statCard(activeCount, "Activities in progress")
+    statCard(activeCount, "Activities in progress"),
+    statCard(paperResponseTotal, "Paper answers")
   ].join("");
 
   elements.pupilStatsBody.innerHTML = "";
@@ -1332,6 +1453,7 @@ function showClassDetails(classItem) {
     elements.pupilStatsBody.innerHTML = `<tr><td colspan="6">No pupils have joined yet.</td></tr>`;
   }
 
+  renderPaperResponses(classItem);
   elements.classDetailPanel.classList.remove("hidden");
   elements.classDetailPanel.scrollIntoView({ behavior: "smooth" });
 }
@@ -1408,6 +1530,7 @@ function activityStatus(activity) {
   const progress = currentProgress.get(activity.id);
   if (progress?.completed) return { label: "Complete", className: "complete", icon: "✓" };
   if (!isActivityUnlocked(activity)) return { label: "Locked", className: "", icon: "🔒" };
+  if (progress?.submitted) return { label: "Submitted", className: "working", icon: "↗" };
   if ((progress?.attempts || 0) > 0) return { label: "Needs work", className: "needs-work", icon: "!" };
   if (progress?.lastCode !== undefined || progress?.writtenResponse !== undefined || progress?.status === "in_progress") {
     return { label: "In progress", className: "working", icon: "◐" };
@@ -1504,6 +1627,7 @@ async function loadPupilDashboard() {
   await loadPupilProgress();
   currentTask = null;
   currentActivity = null;
+  resetOfficialResponseWorkspace();
   clearScheduledAutoSave();
   stopTracePlayback();
   elements.pupilWelcome.textContent = `Hello, ${currentProfile.displayName}`;
@@ -1628,7 +1752,93 @@ function checkpointMarkup(checkpoint, prefix = "checkpoint") {
     <label class="option-label"><input type="radio" name="${prefix}" value="${index}"> <span>${escapeHtml(option)}</span></label>`).join("")}</fieldset><button id="checkCheckpointButton" type="button">Check answer</button></div>`;
 }
 
+
+function clearOfficialResponseAutoSave() {
+  if (officialResponseAutoSaveTimer !== null) {
+    clearTimeout(officialResponseAutoSaveTimer);
+    officialResponseAutoSaveTimer = null;
+  }
+}
+
+function resetOfficialResponseWorkspace() {
+  clearOfficialResponseAutoSave();
+  officialResponseDirty = false;
+  officialResponseSaving = false;
+  activeOfficialResponseInput = null;
+  activeOfficialSaveStatus = null;
+}
+
+function setOfficialResponseSaveStatus(text, mode = "saved") {
+  if (!activeOfficialSaveStatus) return;
+  activeOfficialSaveStatus.textContent = text;
+  activeOfficialSaveStatus.className = `save-status ${mode}`;
+}
+
+async function saveOfficialResponseDraft(activity, { silent = false, automatic = false } = {}) {
+  if (
+    !activity
+    || activity.type !== "official-paper"
+    || !activeOfficialResponseInput
+    || officialResponseSaving
+    || currentProfile?.role !== "student"
+  ) return;
+
+  officialResponseSaving = true;
+  clearOfficialResponseAutoSave();
+  setOfficialResponseSaveStatus(automatic ? "Autosaving…" : "Saving…", "saving");
+  try {
+    await saveGenericProgress(activity, {
+      writtenResponse: activeOfficialResponseInput.value,
+      responseDraftSaved: true
+    });
+    officialResponseDirty = false;
+    setOfficialResponseSaveStatus(automatic ? "Autosaved" : "Answer saved", "saved");
+    setGenericStatus(activity);
+    if (!silent) setGenericFeedback("Your answer has been saved. It has not been submitted yet.", "success");
+  } catch (error) {
+    console.error("Official-paper answer save failed:", error);
+    setOfficialResponseSaveStatus("Save failed", "error");
+    if (!silent) setGenericFeedback(error.message || "Your answer could not be saved.", "error");
+  } finally {
+    officialResponseSaving = false;
+  }
+}
+
+function scheduleOfficialResponseAutoSave(activity) {
+  officialResponseDirty = true;
+  setOfficialResponseSaveStatus("Unsaved changes", "unsaved");
+  clearOfficialResponseAutoSave();
+  officialResponseAutoSaveTimer = setTimeout(() => {
+    officialResponseAutoSaveTimer = null;
+    if (officialResponseDirty) void saveOfficialResponseDraft(activity, { silent: true, automatic: true });
+  }, 5000);
+}
+
+function officialModelPanelMarkup(activity, progress = {}) {
+  const marks = Math.max(1, Number(activity.marks || 1));
+  const options = Array.from({ length: marks + 1 }, (_, value) =>
+    `<option value="${value}" ${Number(progress.selfAssessedMark) === value ? "selected" : ""}>${value}/${marks}</option>`
+  ).join("");
+  return `
+    <div class="model-answer-panel">
+      <p class="eyebrow">Teacher model answer</p>
+      <h3>Compare your answer</h3>
+      <div class="model-answer-text">${escapeHtml(activity.modelAnswer || "Your teacher has not added a model answer yet.")}</div>
+      ${(activity.markingPoints || []).length ? `<h4>Points that could gain marks</h4><ul>${activity.markingPoints.map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>` : ""}
+      <div class="self-review-grid">
+        <label>My estimated mark
+          <select id="officialSelfMarkInput">${options}</select>
+        </label>
+        <label class="wide-field">What did I miss or what will I improve next time?
+          <textarea id="officialReflectionInput" class="small-textarea" placeholder="For example: I needed to explain why the data type was suitable.">${escapeHtml(progress.reflection || "")}</textarea>
+        </label>
+      </div>
+      <button id="completeOfficialReviewButton" type="button">Save reflection and complete review</button>
+    </div>`;
+}
+
 function renderGenericActivity(activity) {
+  resetOfficialResponseWorkspace();
   currentTask = null;
   currentActivity = activity;
   clearMessage();
@@ -1736,25 +1946,108 @@ function renderGenericActivity(activity) {
       });
     });
   } else if (activity.type === "official-paper") {
+    const marks = Math.max(1, Number(activity.marks || 1));
     elements.activityContent.innerHTML = `
       <div class="official-paper-box">
         <h3>${escapeHtml(activity.year || "Official")} National 5 Computing Science</h3>
-        <p><strong>${escapeHtml(activity.questionReference || activity.title)}</strong>${activity.pageReference ? ` · ${escapeHtml(activity.pageReference)}` : ""}</p>
+        <p><strong>${escapeHtml(activity.questionReference || activity.title)}</strong>${activity.pageReference ? ` · ${escapeHtml(activity.pageReference)}` : ""} · ${marks} mark${marks === 1 ? "" : "s"}</p>
         <p>${escapeHtml(activity.description || "Open the official paper and attempt the referenced question.")}</p>
         <p class="help-text">The question is not copied into this app. It opens on the official awarding-body website.</p>
         <div class="activity-actions">
           <a id="openOfficialPaperLink" class="button-link" href="${escapeHtml(activity.officialUrl)}" target="_blank" rel="noopener">Open official paper</a>
-          <button id="completeOfficialButton" type="button">I have completed the question</button>
         </div>
       </div>`;
+
+    elements.activityInteraction.innerHTML = `
+      <section class="exam-answer-workspace">
+        <div class="workspace-heading">
+          <div>
+            <p class="eyebrow">My answer</p>
+            <h3>Write your response</h3>
+            <p class="help-text">Your work autosaves. Submit your answer before opening the teacher model answer.</p>
+          </div>
+          <span id="officialSaveStatus" class="save-status">${progress.writtenResponse !== undefined ? "Saved answer loaded" : "No unsaved changes"}</span>
+        </div>
+        <textarea id="officialResponseInput" class="written-response official-response" placeholder="Write your answer here...">${escapeHtml(progress.writtenResponse || "")}</textarea>
+        ${progress.originalSubmission ? `<div class="submission-note"><strong>First submission preserved.</strong> You may improve the working answer above, but your teacher can still see your original response.</div>` : ""}
+        <div class="activity-actions">
+          <button id="saveOfficialAnswerButton" type="button" class="save-button">Save answer</button>
+          <button id="submitOfficialAnswerButton" type="button">${progress.submitted ? "Submit revised answer" : "Submit answer"}</button>
+          <button id="showOfficialModelButton" type="button" class="secondary" ${progress.submitted ? "" : "disabled"}>Show teacher model answer</button>
+        </div>
+        <div id="officialModelPanel" class="marking-points ${progress.modelAnswerViewed ? "" : "hidden"}"></div>
+      </section>`;
+
+    activeOfficialResponseInput = elements.activityInteraction.querySelector("#officialResponseInput");
+    activeOfficialSaveStatus = elements.activityInteraction.querySelector("#officialSaveStatus");
+    const modelPanel = elements.activityInteraction.querySelector("#officialModelPanel");
+    const showModelButton = elements.activityInteraction.querySelector("#showOfficialModelButton");
+
+    const renderModelPanel = () => {
+      const latest = currentProgress.get(activity.id) || progress;
+      modelPanel.classList.remove("hidden");
+      modelPanel.innerHTML = officialModelPanelMarkup(activity, latest);
+      const selfMarkInput = modelPanel.querySelector("#officialSelfMarkInput");
+      const reflectionInput = modelPanel.querySelector("#officialReflectionInput");
+      modelPanel.querySelector("#completeOfficialReviewButton").addEventListener("click", async () => {
+        await saveGenericProgress(activity, {
+          completed: true,
+          submitted: true,
+          writtenResponse: activeOfficialResponseInput.value,
+          selfAssessedMark: Number(selfMarkInput.value),
+          reflection: reflectionInput.value,
+          selfReviewCompleted: true,
+          reviewedAt: serverTimestamp()
+        }, { correct: true });
+        setGenericFeedback("Review complete. Your answer, estimated mark and reflection have been saved.", "success");
+        setGenericStatus(activity);
+        renderRelatedPractice(activity, elements.activityRelatedPractice);
+      });
+    };
+
+    if (progress.modelAnswerViewed) renderModelPanel();
+
+    activeOfficialResponseInput.addEventListener("input", () => scheduleOfficialResponseAutoSave(activity));
+
     elements.activityContent.querySelector("#openOfficialPaperLink").addEventListener("click", async () => {
       try { await saveGenericProgress(activity, { paperOpened: true, paperOpenedAt: serverTimestamp() }); } catch (error) { console.warn(error); }
       setGenericStatus(activity);
     });
-    elements.activityContent.querySelector("#completeOfficialButton").addEventListener("click", async () => {
-      await saveGenericProgress(activity, { completed: true, paperOpened: true }, { correct: true });
-      setGenericFeedback("Official-paper practice marked complete.", "success");
+
+    elements.activityInteraction.querySelector("#saveOfficialAnswerButton").addEventListener("click", () => {
+      void saveOfficialResponseDraft(activity);
+    });
+
+    elements.activityInteraction.querySelector("#submitOfficialAnswerButton").addEventListener("click", async () => {
+      const response = activeOfficialResponseInput.value.trim();
+      if (!response) return setGenericFeedback("Write an answer before submitting it.", "error");
+      clearOfficialResponseAutoSave();
+      const oldProgress = currentProgress.get(activity.id) || {};
+      await saveGenericProgress(activity, {
+        writtenResponse: activeOfficialResponseInput.value,
+        submitted: true,
+        originalSubmission: oldProgress.originalSubmission || activeOfficialResponseInput.value,
+        submittedAt: oldProgress.submittedAt || serverTimestamp()
+      });
+      officialResponseDirty = false;
+      setOfficialResponseSaveStatus("Submitted", "saved");
+      showModelButton.disabled = false;
+      showModelButton.textContent = "Show teacher model answer";
+      setGenericFeedback("Answer submitted. The teacher model answer is now available.", "success");
       setGenericStatus(activity);
+    });
+
+    showModelButton.addEventListener("click", async () => {
+      const latest = currentProgress.get(activity.id) || {};
+      if (!latest.submitted) return setGenericFeedback("Submit your answer before opening the model answer.", "error");
+      await saveGenericProgress(activity, {
+        modelAnswerViewed: true,
+        modelAnswerViewedAt: serverTimestamp(),
+        writtenResponse: activeOfficialResponseInput.value
+      });
+      renderModelPanel();
+      showModelButton.textContent = "Model answer opened";
+      setGenericFeedback("Compare your answer with the model, then estimate your mark and record one improvement.", "info");
     });
   }
 
@@ -1764,6 +2057,10 @@ function renderGenericActivity(activity) {
 }
 
 elements.backFromActivityButton.addEventListener("click", async () => {
+  if (currentActivity?.type === "official-paper" && officialResponseDirty) {
+    try { await saveOfficialResponseDraft(currentActivity, { silent: true }); } catch (_) { /* continue */ }
+  }
+  resetOfficialResponseWorkspace();
   showView("pupilView");
   await loadPupilDashboard();
 });
