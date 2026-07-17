@@ -20,6 +20,7 @@ import {
   query,
   where,
   writeBatch,
+  runTransaction,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 const AREAS = [
@@ -185,7 +186,7 @@ const ACTIVITIES = [
       "Where the question provides variable names, refer to them directly and suggest a clearer replacement.",
       "Use suitable indentation where appropriate."
     ],
-    modelAnswer: "Use meaningful variable names that describe what each value stores. For example, an unclear name such as abc could be replaced with total if it stores a total. This makes the code easier to understand."
+    modelAnswer: "Use **meaningful variable names** that describe what each value stores. For example, an unclear name such as abc could be replaced with total if it stores a total. This makes the code easier to understand."
   }),
   official({
     id: "SDD-PY-01-O1", areaId: "sdd", unitId: "sdd-python-01", order: 10,
@@ -198,7 +199,7 @@ const ACTIVITIES = [
       "Give a suitable example linked to what the variable stores, such as total if abc stores a total or count if xyz stores a count.",
       "Use consistent indentation to make the program structure easier to follow."
     ],
-    modelAnswer: "Replace unclear variable names such as abc and xyz with names that describe the data they store. For example, if abc stores a total, rename it total; if xyz stores a count, rename it count. This makes the program easier to read and understand.",
+    modelAnswer: "Replace unclear variable names such as abc and xyz with **meaningful variable names** that describe the data they store. For example, if abc stores a total, rename it total; if xyz stores a count, rename it count. This makes the program easier to read and understand.",
     description: "Open the official 2025 paper and attempt Question 3(b). The app links to the paper rather than reproducing the copyrighted question."
   }),
 
@@ -532,6 +533,729 @@ const ACTIVITY_TYPE_LABELS = {
 };
 
 
+const SPACED_QUESTIONS = [
+  {
+    "id": "SP-01-01",
+    "unitId": "sdd-python-01",
+    "prompt": "Which line correctly displays Hello?",
+    "options": [
+      "print(Hello)",
+      "print(\"Hello\")",
+      "Print(\"Hello\")"
+    ],
+    "answer": 1,
+    "explanation": "Text needs quotation marks and print begins with a lowercase p.",
+    "skills": [
+      "print",
+      "strings",
+      "syntax"
+    ]
+  },
+  {
+    "id": "SP-01-02",
+    "unitId": "sdd-python-01",
+    "prompt": "Which symbol begins a Python comment?",
+    "options": [
+      "//",
+      "#",
+      "<!--"
+    ],
+    "answer": 1,
+    "explanation": "Python comments begin with #.",
+    "skills": [
+      "comments",
+      "syntax"
+    ]
+  },
+  {
+    "id": "SP-01-03",
+    "unitId": "sdd-python-01",
+    "prompt": "What is displayed on the second line?",
+    "codeSnippet": "print(\"Start\")\\nprint(\"Middle\")\\nprint(\"Finish\")",
+    "options": [
+      "Start",
+      "Middle",
+      "Finish"
+    ],
+    "answer": 1,
+    "explanation": "Python normally follows the instructions from top to bottom.",
+    "skills": [
+      "sequence",
+      "predict-output"
+    ]
+  },
+  {
+    "id": "SP-01-04",
+    "unitId": "sdd-python-01",
+    "prompt": "Which is the best improvement for the variable name abc when it stores a total score?",
+    "options": [
+      "a",
+      "totalScore",
+      "number"
+    ],
+    "answer": 1,
+    "explanation": "totalScore is a meaningful variable name because it describes the stored value.",
+    "skills": [
+      "meaningful-identifiers",
+      "readability"
+    ]
+  },
+  {
+    "id": "SP-01-05",
+    "unitId": "sdd-python-01",
+    "prompt": "Why are meaningful variable names useful?",
+    "options": [
+      "They make the program run faster",
+      "They make the purpose of stored values clear",
+      "They prevent all syntax errors"
+    ],
+    "answer": 1,
+    "explanation": "Meaningful variable names improve readability by describing what each value represents.",
+    "skills": [
+      "meaningful-identifiers",
+      "readability"
+    ]
+  },
+  {
+    "id": "SP-01-06",
+    "unitId": "sdd-python-01",
+    "prompt": "Which change makes the structure of a program easier to follow?",
+    "options": [
+      "Consistent indentation",
+      "Removing all spaces",
+      "Using only one-letter names"
+    ],
+    "answer": 0,
+    "explanation": "Consistent indentation makes blocks and program structure clear.",
+    "skills": [
+      "indentation",
+      "readability"
+    ]
+  },
+  {
+    "id": "SP-01-07",
+    "unitId": "sdd-python-01",
+    "prompt": "When reading a Python traceback, which part should you usually read first?",
+    "options": [
+      "The final line containing the error type and message",
+      "The first line only",
+      "The longest line"
+    ],
+    "answer": 0,
+    "explanation": "The final line usually names the error and explains the immediate problem.",
+    "skills": [
+      "errors",
+      "debugging"
+    ]
+  },
+  {
+    "id": "SP-01-08",
+    "unitId": "sdd-python-01",
+    "prompt": "Which Python line translates SEND \"Ready\" TO DISPLAY?",
+    "options": [
+      "input(\"Ready\")",
+      "print(\"Ready\")",
+      "Ready = display"
+    ],
+    "answer": 1,
+    "explanation": "SEND ... TO DISPLAY is represented by print().",
+    "skills": [
+      "pseudocode",
+      "translation",
+      "print"
+    ]
+  },
+  {
+    "id": "SP-01-09",
+    "unitId": "sdd-python-01",
+    "prompt": "What error is caused by writing Print instead of print?",
+    "options": [
+      "NameError",
+      "ZeroDivisionError",
+      "IndexError"
+    ],
+    "answer": 0,
+    "explanation": "Python treats Print as an unknown name because it is case-sensitive.",
+    "skills": [
+      "name-error",
+      "debugging",
+      "case-sensitivity"
+    ]
+  },
+  {
+    "id": "SP-01-10",
+    "unitId": "sdd-python-01",
+    "prompt": "Which answer is strongest for a readability question about variables abc and xyz?",
+    "options": [
+      "Use better names",
+      "Replace abc and xyz with meaningful variable names such as totalScore and pupilCount so the stored values are clear",
+      "Add more code"
+    ],
+    "answer": 1,
+    "explanation": "The strongest answer uses the key term and specific examples from the question.",
+    "skills": [
+      "meaningful-identifiers",
+      "question-specific-examples",
+      "exam-technique"
+    ]
+  },
+  {
+    "id": "SP-02-01",
+    "unitId": "sdd-python-02",
+    "prompt": "What does the equals sign do in score = 7?",
+    "options": [
+      "Compares score with 7",
+      "Assigns 7 to score",
+      "Displays 7"
+    ],
+    "answer": 1,
+    "explanation": "The equals sign assigns the value on the right to the variable on the left.",
+    "skills": [
+      "variables",
+      "assignment"
+    ]
+  },
+  {
+    "id": "SP-02-02",
+    "unitId": "sdd-python-02",
+    "prompt": "Which data type is most suitable for the number of pupils in a class?",
+    "options": [
+      "Integer",
+      "String",
+      "Boolean"
+    ],
+    "answer": 0,
+    "explanation": "A pupil count is a whole number, so integer is suitable.",
+    "skills": [
+      "data-types",
+      "integer"
+    ]
+  },
+  {
+    "id": "SP-02-03",
+    "unitId": "sdd-python-02",
+    "prompt": "Which data type is most suitable for a pupil's name?",
+    "options": [
+      "Real",
+      "String",
+      "Boolean"
+    ],
+    "answer": 1,
+    "explanation": "A name is text, so string is suitable.",
+    "skills": [
+      "data-types",
+      "string"
+    ]
+  },
+  {
+    "id": "SP-02-04",
+    "unitId": "sdd-python-02",
+    "prompt": "Which data type is most suitable for a price such as 4.75?",
+    "options": [
+      "Real",
+      "Integer",
+      "Boolean"
+    ],
+    "answer": 0,
+    "explanation": "A value with a decimal part is represented as a real number.",
+    "skills": [
+      "data-types",
+      "real"
+    ]
+  },
+  {
+    "id": "SP-02-05",
+    "unitId": "sdd-python-02",
+    "prompt": "Which value is Boolean?",
+    "options": [
+      "\"True\"",
+      "True",
+      "1.0"
+    ],
+    "answer": 1,
+    "explanation": "True without quotation marks is a Boolean value.",
+    "skills": [
+      "data-types",
+      "boolean"
+    ]
+  },
+  {
+    "id": "SP-02-06",
+    "unitId": "sdd-python-02",
+    "prompt": "What is displayed?",
+    "codeSnippet": "score = 4\\nscore = score + 3\\nprint(score)",
+    "options": [
+      "4",
+      "7",
+      "43"
+    ],
+    "answer": 1,
+    "explanation": "The second assignment replaces score with 4 + 3, which is 7.",
+    "skills": [
+      "variables",
+      "assignment",
+      "trace-code"
+    ]
+  },
+  {
+    "id": "SP-02-07",
+    "unitId": "sdd-python-02",
+    "prompt": "Which variable name is most meaningful for storing a pupil's age?",
+    "options": [
+      "x",
+      "age",
+      "data"
+    ],
+    "answer": 1,
+    "explanation": "age directly describes the stored value.",
+    "skills": [
+      "meaningful-identifiers",
+      "variables"
+    ]
+  },
+  {
+    "id": "SP-02-08",
+    "unitId": "sdd-python-02",
+    "prompt": "What is the final value of total?",
+    "codeSnippet": "total = 5\\nbonus = 2\\ntotal = total + bonus",
+    "options": [
+      "2",
+      "5",
+      "7"
+    ],
+    "answer": 2,
+    "explanation": "The final assignment adds bonus to the existing total.",
+    "skills": [
+      "variables",
+      "trace-code",
+      "addition"
+    ]
+  },
+  {
+    "id": "SP-02-09",
+    "unitId": "sdd-python-02",
+    "prompt": "Which line creates a string variable called town?",
+    "options": [
+      "town = Aberdeen",
+      "town = \"Aberdeen\"",
+      "\"town\" = Aberdeen"
+    ],
+    "answer": 1,
+    "explanation": "String values need quotation marks and the variable name is placed on the left.",
+    "skills": [
+      "variables",
+      "string",
+      "assignment"
+    ]
+  },
+  {
+    "id": "SP-02-10",
+    "unitId": "sdd-python-02",
+    "prompt": "Why is pupilCount stronger than xyz for storing the number of pupils?",
+    "options": [
+      "It is longer",
+      "It is a meaningful variable name that explains the value",
+      "It always stores an integer"
+    ],
+    "answer": 1,
+    "explanation": "The name describes the purpose of the value and improves readability.",
+    "skills": [
+      "meaningful-identifiers",
+      "readability",
+      "question-specific-examples"
+    ]
+  },
+  {
+    "id": "SP-03-01",
+    "unitId": "sdd-python-03",
+    "prompt": "What data type does input() return before conversion?",
+    "options": [
+      "String",
+      "Integer",
+      "Boolean"
+    ],
+    "answer": 0,
+    "explanation": "Keyboard input is initially received as text.",
+    "skills": [
+      "input",
+      "string",
+      "type-conversion"
+    ]
+  },
+  {
+    "id": "SP-03-02",
+    "unitId": "sdd-python-03",
+    "prompt": "Which line receives a whole-number age?",
+    "options": [
+      "age = input(\"Age: \")",
+      "age = int(input(\"Age: \"))",
+      "int = age(input())"
+    ],
+    "answer": 1,
+    "explanation": "input() receives text and int() converts it to a whole number.",
+    "skills": [
+      "input",
+      "integer",
+      "type-conversion"
+    ]
+  },
+  {
+    "id": "SP-03-03",
+    "unitId": "sdd-python-03",
+    "prompt": "Which conversion is suitable for a price such as 12.50?",
+    "options": [
+      "str()",
+      "float()",
+      "bool()"
+    ],
+    "answer": 1,
+    "explanation": "float() converts text into a real number.",
+    "skills": [
+      "input",
+      "real",
+      "type-conversion"
+    ]
+  },
+  {
+    "id": "SP-03-04",
+    "unitId": "sdd-python-03",
+    "prompt": "What error is likely if int() is used on the text hello?",
+    "options": [
+      "ValueError",
+      "NameError",
+      "ZeroDivisionError"
+    ],
+    "answer": 0,
+    "explanation": "hello cannot be converted into an integer value.",
+    "skills": [
+      "value-error",
+      "type-conversion",
+      "debugging"
+    ]
+  },
+  {
+    "id": "SP-03-05",
+    "unitId": "sdd-python-03",
+    "prompt": "In IPO, what does the P stand for?",
+    "options": [
+      "Print",
+      "Process",
+      "Program"
+    ],
+    "answer": 1,
+    "explanation": "IPO means Input, Process and Output.",
+    "skills": [
+      "ipo",
+      "design"
+    ]
+  },
+  {
+    "id": "SP-03-06",
+    "unitId": "sdd-python-03",
+    "prompt": "Which is an input in a program that calculates an average of two marks?",
+    "options": [
+      "The two marks entered",
+      "Adding the marks",
+      "The average displayed"
+    ],
+    "answer": 0,
+    "explanation": "The marks are supplied to the program as input.",
+    "skills": [
+      "ipo",
+      "input",
+      "analysis"
+    ]
+  },
+  {
+    "id": "SP-03-07",
+    "unitId": "sdd-python-03",
+    "prompt": "Which is the process in a program that calculates an average?",
+    "options": [
+      "Enter mark1",
+      "Add the marks and divide by 2",
+      "Display the result"
+    ],
+    "answer": 1,
+    "explanation": "The calculation is the process.",
+    "skills": [
+      "ipo",
+      "process",
+      "average"
+    ]
+  },
+  {
+    "id": "SP-03-08",
+    "unitId": "sdd-python-03",
+    "prompt": "Why should a prompt be included inside input()?",
+    "options": [
+      "To tell the user what to enter",
+      "To convert the value automatically",
+      "To create a comment"
+    ],
+    "answer": 0,
+    "explanation": "A clear prompt helps the user provide the expected data.",
+    "skills": [
+      "input",
+      "user-interface",
+      "prompts"
+    ]
+  },
+  {
+    "id": "SP-03-09",
+    "unitId": "sdd-python-03",
+    "prompt": "What is displayed if the user enters 5?",
+    "codeSnippet": "number = int(input(\"Number: \"))\\nprint(number + 2)",
+    "options": [
+      "52",
+      "7",
+      "number + 2"
+    ],
+    "answer": 1,
+    "explanation": "The input is converted to an integer, then 2 is added.",
+    "skills": [
+      "input",
+      "integer",
+      "addition",
+      "trace-code"
+    ]
+  },
+  {
+    "id": "SP-03-10",
+    "unitId": "sdd-python-03",
+    "prompt": "Which design statement is correct for a name-and-age program?",
+    "options": [
+      "Name is an input and displaying the message is an output",
+      "Displaying is an input",
+      "The name is a process"
+    ],
+    "answer": 0,
+    "explanation": "The user provides the name; the program displays the resulting message.",
+    "skills": [
+      "ipo",
+      "input",
+      "output",
+      "design"
+    ]
+  },
+  {
+    "id": "SP-04-01",
+    "unitId": "sdd-python-04",
+    "prompt": "Which operator is used for multiplication in Python?",
+    "options": [
+      "x",
+      "*",
+      "^"
+    ],
+    "answer": 1,
+    "explanation": "Python uses an asterisk for multiplication.",
+    "skills": [
+      "operators",
+      "multiplication"
+    ]
+  },
+  {
+    "id": "SP-04-02",
+    "unitId": "sdd-python-04",
+    "prompt": "Which operator is used for exponentiation?",
+    "options": [
+      "^",
+      "**",
+      "x"
+    ],
+    "answer": 1,
+    "explanation": "Python uses ** for exponentiation.",
+    "skills": [
+      "operators",
+      "exponentiation"
+    ]
+  },
+  {
+    "id": "SP-04-03",
+    "unitId": "sdd-python-04",
+    "prompt": "What is the result of 2 + 3 * 4?",
+    "options": [
+      "20",
+      "14",
+      "24"
+    ],
+    "answer": 1,
+    "explanation": "Multiplication happens before addition.",
+    "skills": [
+      "order-of-operations",
+      "arithmetic"
+    ]
+  },
+  {
+    "id": "SP-04-04",
+    "unitId": "sdd-python-04",
+    "prompt": "Which expression correctly calculates the average of mark1 and mark2?",
+    "options": [
+      "mark1 + mark2 / 2",
+      "(mark1 + mark2) / 2",
+      "mark1 + (mark2 / 2)"
+    ],
+    "answer": 1,
+    "explanation": "Brackets ensure both marks are added before division.",
+    "skills": [
+      "average",
+      "brackets",
+      "order-of-operations"
+    ]
+  },
+  {
+    "id": "SP-04-05",
+    "unitId": "sdd-python-04",
+    "prompt": "What does round(value, 1) do?",
+    "options": [
+      "Rounds value to one decimal place",
+      "Rounds value to the nearest ten",
+      "Converts value to an integer"
+    ],
+    "answer": 0,
+    "explanation": "The second argument states the number of decimal places.",
+    "skills": [
+      "rounding",
+      "functions"
+    ]
+  },
+  {
+    "id": "SP-04-06",
+    "unitId": "sdd-python-04",
+    "prompt": "What value is stored in area?",
+    "codeSnippet": "length = 8\\nwidth = 5\\narea = length * width",
+    "options": [
+      "13",
+      "40",
+      "85"
+    ],
+    "answer": 1,
+    "explanation": "Area is calculated by multiplying length by width.",
+    "skills": [
+      "multiplication",
+      "variables",
+      "trace-code"
+    ]
+  },
+  {
+    "id": "SP-04-07",
+    "unitId": "sdd-python-04",
+    "prompt": "Which statement best describes basicCost = timeInSeconds * animatorCharge?",
+    "options": [
+      "The two values are added",
+      "timeInSeconds is multiplied by animatorCharge and stored in basicCost",
+      "basicCost is displayed"
+    ],
+    "answer": 1,
+    "explanation": "The expression multiplies the two named values and assigns the result.",
+    "skills": [
+      "calculation",
+      "assignment",
+      "explanation"
+    ]
+  },
+  {
+    "id": "SP-04-08",
+    "unitId": "sdd-python-04",
+    "prompt": "What is 3 ** 2?",
+    "options": [
+      "6",
+      "9",
+      "32"
+    ],
+    "answer": 1,
+    "explanation": "3 squared is 3 multiplied by 3, which is 9.",
+    "skills": [
+      "exponentiation",
+      "arithmetic"
+    ]
+  },
+  {
+    "id": "SP-04-09",
+    "unitId": "sdd-python-04",
+    "prompt": "Which line translates SET total TO price * quantity?",
+    "options": [
+      "total = price * quantity",
+      "price * quantity = total",
+      "print(total, price, quantity)"
+    ],
+    "answer": 0,
+    "explanation": "The calculated value is assigned to total.",
+    "skills": [
+      "pseudocode",
+      "translation",
+      "multiplication",
+      "assignment"
+    ]
+  },
+  {
+    "id": "SP-04-10",
+    "unitId": "sdd-python-04",
+    "prompt": "Which answer is strongest when explaining a calculation?",
+    "options": [
+      "It does maths",
+      "The program multiplies timeInSeconds by animatorCharge and stores the result in basicCost",
+      "basicCost changes"
+    ],
+    "answer": 1,
+    "explanation": "The strongest answer names the exact variables, operation and destination from the question.",
+    "skills": [
+      "calculation",
+      "question-specific-examples",
+      "exam-technique"
+    ]
+  }
+];
+
+const SKILL_LABELS = {
+  "print": "Print and output",
+  "strings": "Strings",
+  "syntax": "Python syntax",
+  "comments": "Comments",
+  "sequence": "Sequence",
+  "predict-output": "Predicting output",
+  "meaningful-identifiers": "Meaningful variable names",
+  "readability": "Readability",
+  "indentation": "Indentation",
+  "errors": "Reading errors",
+  "debugging": "Debugging",
+  "pseudocode": "Pseudocode",
+  "translation": "Translation",
+  "name-error": "NameError",
+  "case-sensitivity": "Case sensitivity",
+  "question-specific-examples": "Using question details",
+  "exam-technique": "Exam technique",
+  "variables": "Variables",
+  "assignment": "Assignment",
+  "data-types": "Data types",
+  "integer": "Integer",
+  "string": "String",
+  "real": "Real numbers",
+  "boolean": "Boolean",
+  "trace-code": "Tracing code",
+  "addition": "Addition",
+  "input": "Input",
+  "type-conversion": "Type conversion",
+  "value-error": "ValueError",
+  "ipo": "Input, process and output",
+  "design": "Software design",
+  "analysis": "Analysis",
+  "process": "Processes",
+  "average": "Average",
+  "user-interface": "User interface",
+  "prompts": "Input prompts",
+  "output": "Output",
+  "operators": "Operators",
+  "multiplication": "Multiplication",
+  "exponentiation": "Exponentiation",
+  "order-of-operations": "Order of operations",
+  "arithmetic": "Arithmetic",
+  "brackets": "Brackets",
+  "rounding": "Rounding",
+  "functions": "Built-in functions",
+  "calculation": "Calculations",
+  "explanation": "Explaining code"
+};
+
 const firebaseConfig = {
   apiKey: "AIzaSyCNCOKfjQf6FHQQj3squE6NZtZYdyuwsLw",
   authDomain: "python-practice-5b289.firebaseapp.com",
@@ -541,7 +1265,7 @@ const firebaseConfig = {
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
 
-const APP_VERSION = "4.1.5";
+const APP_VERSION = "4.2";
 console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -579,6 +1303,12 @@ let officialResponseDirty = false;
 let officialResponseSaving = false;
 let activeOfficialResponseInput = null;
 let activeOfficialSaveStatus = null;
+let currentReviewStates = new Map();
+let currentReviewAttempts = [];
+let currentClassQuestionStats = new Map();
+let spacedSession = null;
+let spacedQuestionStartedAt = 0;
+const SPACED_INTERVAL_DAYS = [1, 2, 4, 7, 14, 30, 60];
 
 const LEGACY_ACTIVITY_MAP = {
   "variables-01": "SDD-PY-02-05",
@@ -598,7 +1328,7 @@ function clearMessage() {
 }
 
 function showView(viewId) {
-  ["authView", "teacherView", "pupilView", "activityView", "challengeView"].forEach(id => {
+  ["authView", "teacherView", "pupilView", "spacedView", "activityView", "challengeView"].forEach(id => {
     elements[id].classList.toggle("hidden", id !== viewId);
   });
   elements.homeButton.classList.toggle("hidden", viewId === "authView");
@@ -634,6 +1364,11 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function formatTeacherText(value) {
+  const escaped = escapeHtml(value || "");
+  return escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
 function unitById(unitId) {
@@ -801,6 +1536,10 @@ onAuthStateChanged(auth, async user => {
     currentProgress = new Map();
     customActivities = [];
     allActivities = [...ACTIVITIES];
+    currentReviewStates = new Map();
+    currentReviewAttempts = [];
+    currentClassQuestionStats = new Map();
+    spacedSession = null;
     stopTracePlayback();
     clearScheduledAutoSave();
     errorViewMode = "standard";
@@ -1269,13 +2008,21 @@ async function getTeacherClasses() {
 }
 
 async function classDataWithStats(classItem) {
-  const [memberSnapshot, progressSnapshot] = await Promise.all([
+  const [memberSnapshot, progressSnapshot, reviewAttemptSnapshot, reviewStateSnapshot, reviewSessionSnapshot, questionStatsSnapshot] = await Promise.all([
     getDocs(collection(db, "classes", classItem.id, "members")),
-    getDocs(query(collection(db, "progress"), where("classId", "==", classItem.id)))
+    getDocs(query(collection(db, "progress"), where("classId", "==", classItem.id))),
+    getDocs(query(collection(db, "reviewAttempts"), where("classId", "==", classItem.id))),
+    getDocs(query(collection(db, "reviewStates"), where("classId", "==", classItem.id))),
+    getDocs(query(collection(db, "reviewSessions"), where("classId", "==", classItem.id))),
+    getDocs(query(collection(db, "reviewQuestionStats"), where("classId", "==", classItem.id)))
   ]);
   const members = memberSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
   const progress = progressSnapshot.docs.map(item => item.data());
-  return { ...classItem, members, progress };
+  const reviewAttempts = reviewAttemptSnapshot.docs.map(item => item.data());
+  const reviewStates = reviewStateSnapshot.docs.map(item => item.data());
+  const reviewSessions = reviewSessionSnapshot.docs.map(item => item.data());
+  const questionStats = questionStatsSnapshot.docs.map(item => item.data());
+  return { ...classItem, members, progress, reviewAttempts, reviewStates, reviewSessions, questionStats };
 }
 
 async function loadTeacherDashboard() {
@@ -1411,6 +2158,63 @@ function renderPaperResponses(classItem) {
   elements.paperResponseViewer.innerHTML = "";
 }
 
+function timestampMillis(value) {
+  if (!value) return 0;
+  if (typeof value.toMillis === "function") return value.toMillis();
+  if (typeof value.toDate === "function") return value.toDate().getTime();
+  if (value instanceof Date) return value.getTime();
+  return new Date(value).getTime() || 0;
+}
+
+function renderSpacedClassOverview(classItem) {
+  const attempts = classItem.reviewAttempts || [];
+  const states = classItem.reviewStates || [];
+  const sessions = classItem.reviewSessions || [];
+  const now = Date.now();
+  const weekAgo = now - (7 * 24 * 60 * 60 * 1000);
+  const activePupils = new Set(sessions.filter(item => timestampMillis(item.completedAt) >= weekAgo).map(item => item.userId));
+  const correct = attempts.filter(item => item.correct === true).length;
+  const recall = attempts.length ? Math.round((correct / attempts.length) * 100) : 0;
+  const overduePupils = new Set(states.filter(item => timestampMillis(item.nextReviewAt) <= now).map(item => item.userId));
+
+  const bySkill = new Map();
+  attempts.forEach(attempt => {
+    (attempt.skillIds || []).forEach(skillId => {
+      const row = bySkill.get(skillId) || { attempts: 0, correct: 0 };
+      row.attempts += 1;
+      if (attempt.correct) row.correct += 1;
+      bySkill.set(skillId, row);
+    });
+  });
+  const dueBySkill = new Map();
+  states.filter(item => timestampMillis(item.nextReviewAt) <= now).forEach(item => {
+    if (!dueBySkill.has(item.skillId)) dueBySkill.set(item.skillId, new Set());
+    dueBySkill.get(item.skillId).add(item.userId);
+  });
+
+  const skillRows = [...new Set([...bySkill.keys(), ...dueBySkill.keys()])]
+    .map(skillId => ({ skillId, ...(bySkill.get(skillId) || { attempts: 0, correct: 0 }), due: dueBySkill.get(skillId)?.size || 0 }))
+    .sort((a, b) => {
+      const rateA = a.attempts ? a.correct / a.attempts : 1;
+      const rateB = b.attempts ? b.correct / b.attempts : 1;
+      return rateA - rateB || b.due - a.due || b.attempts - a.attempts;
+    });
+  const weakest = skillRows.find(row => row.attempts >= 2);
+
+  elements.spacedReviewCount.textContent = `${attempts.length} review${attempts.length === 1 ? "" : "s"}`;
+  elements.spacedClassStats.innerHTML = [
+    statCard(`${activePupils.size}/${classItem.members.length}`, "Reviewed this week"),
+    statCard(`${recall}%`, "Average recall"),
+    statCard(overduePupils.size, "Pupils with reviews due"),
+    statCard(weakest ? escapeHtml(SKILL_LABELS[weakest.skillId] || weakest.skillId) : "—", "Most insecure skill")
+  ].join("");
+
+  elements.spacedSkillStatsBody.innerHTML = skillRows.slice(0, 12).map(row => {
+    const rate = row.attempts ? Math.round((row.correct / row.attempts) * 100) : 0;
+    return `<tr><td><strong>${escapeHtml(SKILL_LABELS[row.skillId] || row.skillId)}</strong></td><td>${row.attempts}</td><td>${row.attempts ? `${rate}%` : "No attempts"}</td><td>${row.due}</td></tr>`;
+  }).join("") || `<tr><td colspan="4">No spaced-learning responses have been collected yet.</td></tr>`;
+}
+
 function showClassDetails(classItem) {
   const coreIds = new Set(requiredActivities().map(activity => activity.id));
   const coreCount = coreIds.size;
@@ -1458,6 +2262,7 @@ function showClassDetails(classItem) {
     elements.pupilStatsBody.innerHTML = `<tr><td colspan="6">No pupils have joined yet.</td></tr>`;
   }
 
+  renderSpacedClassOverview(classItem);
   renderPaperResponses(classItem);
   elements.classDetailPanel.classList.remove("hidden");
   elements.classDetailPanel.scrollIntoView({ behavior: "smooth" });
@@ -1627,9 +2432,361 @@ function renderPathway() {
   });
 }
 
+function reviewStateDocumentId(skillId) {
+  return `${auth.currentUser.uid}__${skillId}`;
+}
+
+function questionStatDocumentId(questionId) {
+  return `${currentProfile.classId}__${questionId}`;
+}
+
+function eligibleSpacedQuestions() {
+  const startedUnits = new Set(
+    [...currentProgress.entries()]
+      .filter(([, progress]) => progress.completed || progress.attempts > 0 || progress.status === "in_progress")
+      .map(([activityId]) => allActivities.find(item => item.id === activityId)?.unitId)
+      .filter(Boolean)
+  );
+  if (!startedUnits.size) startedUnits.add("sdd-python-01");
+  return SPACED_QUESTIONS.filter(question => startedUnits.has(question.unitId));
+}
+
+async function loadSpacedLearningData() {
+  if (!auth.currentUser || currentProfile?.role !== "student") return;
+  const [stateSnapshot, attemptSnapshot, statSnapshot] = await Promise.all([
+    getDocs(query(collection(db, "reviewStates"), where("userId", "==", auth.currentUser.uid))),
+    getDocs(query(collection(db, "reviewAttempts"), where("userId", "==", auth.currentUser.uid))),
+    getDocs(query(collection(db, "reviewQuestionStats"), where("classId", "==", currentProfile.classId)))
+  ]);
+  currentReviewStates = new Map(stateSnapshot.docs.map(item => [item.data().skillId, item.data()]));
+  currentReviewAttempts = attemptSnapshot.docs.map(item => item.data()).filter(item => item.classId === currentProfile.classId);
+  currentClassQuestionStats = new Map(statSnapshot.docs.map(item => [item.data().questionId, item.data()]));
+}
+
+function questionStage(question) {
+  const states = (question.skills || []).map(skill => currentReviewStates.get(skill)).filter(Boolean);
+  if (!states.length) return 0;
+  return Math.min(...states.map(state => Number(state.stage || 0)));
+}
+
+function questionNextReview(question) {
+  const states = (question.skills || []).map(skill => currentReviewStates.get(skill)).filter(Boolean);
+  if (!states.length) return 0;
+  return Math.min(...states.map(state => timestampMillis(state.nextReviewAt) || 0));
+}
+
+function questionLastReviewed(question) {
+  const attempts = currentReviewAttempts.filter(item => item.questionId === question.id);
+  return Math.max(0, ...attempts.map(item => timestampMillis(item.reviewedAt)));
+}
+
+function classQuestionRate(question) {
+  const stat = currentClassQuestionStats.get(question.id);
+  return stat?.attempts ? Number(stat.correct || 0) / Number(stat.attempts) : 1;
+}
+
+function ownSkillAccuracy() {
+  const map = new Map();
+  currentReviewAttempts.forEach(attempt => {
+    (attempt.skillIds || []).forEach(skillId => {
+      const row = map.get(skillId) || { attempts: 0, correct: 0 };
+      row.attempts += 1;
+      if (attempt.correct) row.correct += 1;
+      map.set(skillId, row);
+    });
+  });
+  return map;
+}
+
+function selectSpacedQuestions() {
+  const pool = eligibleSpacedQuestions();
+  const now = Date.now();
+  const selected = [];
+  const used = new Set();
+  const add = question => {
+    if (!question || used.has(question.id) || selected.length >= 10) return false;
+    used.add(question.id);
+    selected.push(question);
+    return true;
+  };
+  const addFrom = (items, limit) => {
+    let count = 0;
+    items.forEach(item => { if (count < limit && add(item)) count += 1; });
+  };
+
+  const due = [...pool].sort((a, b) => {
+    const dueA = questionNextReview(a);
+    const dueB = questionNextReview(b);
+    const overdueA = dueA <= now ? 0 : 1;
+    const overdueB = dueB <= now ? 0 : 1;
+    return overdueA - overdueB || questionStage(a) - questionStage(b) || dueA - dueB || questionLastReviewed(a) - questionLastReviewed(b);
+  });
+  addFrom(due.filter(question => questionNextReview(question) <= now), 5);
+
+  const skillAccuracy = ownSkillAccuracy();
+  const weakSkills = [...new Set(pool.flatMap(question => question.skills || []))]
+    .sort((a, b) => {
+      const aRow = skillAccuracy.get(a);
+      const bRow = skillAccuracy.get(b);
+      const aRate = aRow?.attempts ? aRow.correct / aRow.attempts : questionStage({ skills: [a] }) / 10;
+      const bRate = bRow?.attempts ? bRow.correct / bRow.attempts : questionStage({ skills: [b] }) / 10;
+      return aRate - bRate;
+    });
+  addFrom(weakSkills.flatMap(skill => pool.filter(question => question.skills.includes(skill)).sort((a, b) => questionLastReviewed(a) - questionLastReviewed(b))), 2);
+
+  const classMisconceptions = pool
+    .filter(question => Number(currentClassQuestionStats.get(question.id)?.attempts || 0) >= 3)
+    .sort((a, b) => classQuestionRate(a) - classQuestionRate(b));
+  addFrom(classMisconceptions, 1);
+
+  const masteredOld = pool
+    .filter(question => questionStage(question) >= 3)
+    .sort((a, b) => questionLastReviewed(a) - questionLastReviewed(b));
+  addFrom(masteredOld, 1);
+
+  const unseen = pool.filter(question => !currentReviewAttempts.some(item => item.questionId === question.id));
+  addFrom(unseen, 10);
+  addFrom(due, 10);
+  return selected.slice(0, 10);
+}
+
+function spacedDueCount() {
+  const now = Date.now();
+  return eligibleSpacedQuestions().filter(question => questionNextReview(question) <= now).length;
+}
+
+function renderSpacedPracticeCard() {
+  const due = spacedDueCount();
+  const eligible = eligibleSpacedQuestions().length;
+  elements.spacedPracticeDescription.textContent = due
+    ? `${due} question${due === 1 ? " is" : "s are"} ready for review. Your test will mix due skills with older learning.`
+    : "No reviews are overdue, so the app will give you a mixed retrieval check from learned topics.";
+  elements.spacedPracticeMeta.innerHTML = `<span class="activity-chip">${Math.min(10, eligible)} main questions</span><span class="activity-chip">About 10 minutes</span><span class="activity-chip">Personalised</span>`;
+  elements.startSpacedPracticeButton.disabled = eligible === 0;
+}
+
+function updateReviewStateData(old, skillId, correct, confidence) {
+  const oldStage = Number(old?.stage || 0);
+  let stage;
+  let days;
+  if (!correct) {
+    stage = Math.max(0, oldStage - 1);
+    days = 1;
+  } else if (Number(confidence) === 1) {
+    stage = Math.max(1, oldStage);
+    days = 2;
+  } else {
+    stage = Math.min(SPACED_INTERVAL_DAYS.length - 1, oldStage + 1);
+    days = SPACED_INTERVAL_DAYS[stage];
+  }
+  const nextReviewAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  return {
+    userId: auth.currentUser.uid,
+    classId: currentProfile.classId,
+    skillId,
+    stage,
+    nextReviewAt,
+    lastReviewedAt: serverTimestamp(),
+    correctCount: Number(old?.correctCount || 0) + (correct ? 1 : 0),
+    incorrectCount: Number(old?.incorrectCount || 0) + (correct ? 0 : 1),
+    consecutiveCorrect: correct ? Number(old?.consecutiveCorrect || 0) + 1 : 0,
+    lastCorrect: correct,
+    updatedAt: serverTimestamp()
+  };
+}
+
+async function saveSpacedAnswer(question, selectedAnswer, confidence, correct, retry) {
+  const responseSeconds = Math.max(1, Math.round((Date.now() - spacedQuestionStartedAt) / 1000));
+  const attemptRef = doc(collection(db, "reviewAttempts"));
+  const batch = writeBatch(db);
+  batch.set(attemptRef, {
+    userId: auth.currentUser.uid,
+    classId: currentProfile.classId,
+    questionId: question.id,
+    unitId: question.unitId,
+    skillIds: question.skills || [],
+    selectedAnswer,
+    correct,
+    confidence: Number(confidence),
+    responseTimeSeconds: responseSeconds,
+    retry: Boolean(retry),
+    reviewedAt: serverTimestamp()
+  });
+  (question.skills || []).forEach(skillId => {
+    const old = currentReviewStates.get(skillId) || {};
+    const data = updateReviewStateData(old, skillId, correct, confidence);
+    batch.set(doc(db, "reviewStates", reviewStateDocumentId(skillId)), data, { merge: Boolean(currentReviewStates.has(skillId)) });
+    currentReviewStates.set(skillId, { ...old, ...data });
+  });
+  await batch.commit();
+
+  const statRef = doc(db, "reviewQuestionStats", questionStatDocumentId(question.id));
+  await runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(statRef);
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      transaction.update(statRef, {
+        attempts: Number(data.attempts || 0) + 1,
+        correct: Number(data.correct || 0) + (correct ? 1 : 0),
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      transaction.set(statRef, {
+        classId: currentProfile.classId,
+        questionId: question.id,
+        attempts: 1,
+        correct: correct ? 1 : 0,
+        updatedAt: serverTimestamp()
+      });
+    }
+  });
+  const localAttempt = { questionId: question.id, skillIds: question.skills || [], correct, confidence: Number(confidence), retry: Boolean(retry), reviewedAt: new Date() };
+  currentReviewAttempts.push(localAttempt);
+  const oldStat = currentClassQuestionStats.get(question.id) || { attempts: 0, correct: 0 };
+  currentClassQuestionStats.set(question.id, { ...oldStat, attempts: Number(oldStat.attempts || 0) + 1, correct: Number(oldStat.correct || 0) + (correct ? 1 : 0) });
+  return localAttempt;
+}
+
+function resetSpacedSessionView() {
+  elements.spacedIntroPanel.classList.remove("hidden");
+  elements.spacedQuestionPanel.classList.add("hidden");
+  elements.spacedSummaryPanel.classList.add("hidden");
+  elements.spacedSummaryPanel.innerHTML = "";
+  elements.spacedSessionProgress.textContent = "Ready";
+  elements.spacedSessionTitle.textContent = "Your mixed retrieval session";
+  spacedSession = null;
+}
+
+function renderSpacedQuestion() {
+  const item = spacedSession?.queue[spacedSession.index];
+  if (!item) return finishSpacedSession();
+  const question = item.question;
+  const mainNumber = item.retry ? "Quick retry" : `Question ${Math.min(spacedSession.mainAnswered + 1, spacedSession.mainTarget)} of ${spacedSession.mainTarget}`;
+  elements.spacedSessionProgress.textContent = mainNumber;
+  elements.spacedQuestionPrompt.textContent = question.prompt;
+  elements.spacedQuestionOptions.innerHTML = question.options.map((option, index) => `<label class="option-label"><input type="radio" name="spaced-answer" value="${index}"> <span>${escapeHtml(option)}</span></label>`).join("");
+  if (question.codeSnippet) {
+    elements.spacedQuestionCode.classList.remove("hidden");
+    elements.spacedQuestionCode.innerHTML = `<pre class="lesson-code">${escapeHtml(question.codeSnippet)}</pre>`;
+  } else {
+    elements.spacedQuestionCode.classList.add("hidden");
+    elements.spacedQuestionCode.innerHTML = "";
+  }
+  elements.spacedConfidenceInput.value = "2";
+  elements.submitSpacedAnswerButton.disabled = false;
+  elements.submitSpacedAnswerButton.classList.remove("hidden");
+  elements.nextSpacedQuestionButton.classList.add("hidden");
+  elements.spacedQuestionFeedback.className = "feedback hidden";
+  elements.spacedQuestionFeedback.textContent = "";
+  spacedQuestionStartedAt = Date.now();
+}
+
+async function submitSpacedAnswer() {
+  const item = spacedSession?.queue[spacedSession.index];
+  if (!item || item.answered) return;
+  const selected = elements.spacedQuestionOptions.querySelector('input[name="spaced-answer"]:checked');
+  if (!selected) {
+    elements.spacedQuestionFeedback.textContent = "Choose an answer before checking.";
+    elements.spacedQuestionFeedback.className = "feedback error";
+    return;
+  }
+  elements.submitSpacedAnswerButton.disabled = true;
+  const answer = Number(selected.value);
+  const confidence = Number(elements.spacedConfidenceInput.value || 2);
+  const correct = answer === Number(item.question.answer);
+  try {
+    await saveSpacedAnswer(item.question, answer, confidence, correct, item.retry);
+    item.answered = true;
+    item.correct = correct;
+    item.selectedAnswer = answer;
+    if (item.retry) spacedSession.retryAnswered += 1;
+    else {
+      spacedSession.mainAnswered += 1;
+      if (correct) spacedSession.mainCorrect += 1;
+    }
+    if (!correct && !item.retry && !spacedSession.retryQuestionIds.has(item.question.id)) {
+      spacedSession.retryQuestionIds.add(item.question.id);
+      const insertAt = Math.min(spacedSession.queue.length, spacedSession.index + 4);
+      spacedSession.queue.splice(insertAt, 0, { question: item.question, retry: true, answered: false });
+    }
+    elements.spacedQuestionFeedback.innerHTML = correct
+      ? `<strong>Correct.</strong> ${escapeHtml(item.question.explanation)}`
+      : `<strong>Not yet.</strong> The correct answer is <strong>${escapeHtml(item.question.options[item.question.answer])}</strong>. ${escapeHtml(item.question.explanation)}${item.retry ? "" : " This skill will return in a quick retry and an earlier future review."}`;
+    elements.spacedQuestionFeedback.className = `feedback ${correct ? "success" : "error"}`;
+    elements.submitSpacedAnswerButton.classList.add("hidden");
+    elements.nextSpacedQuestionButton.classList.remove("hidden");
+    elements.nextSpacedQuestionButton.textContent = spacedSession.index >= spacedSession.queue.length - 1 ? "Finish session" : "Next question";
+  } catch (error) {
+    console.error(error);
+    elements.submitSpacedAnswerButton.disabled = false;
+    elements.spacedQuestionFeedback.textContent = error.message || "The answer could not be saved.";
+    elements.spacedQuestionFeedback.className = "feedback error";
+  }
+}
+
+async function finishSpacedSession() {
+  const percentage = spacedSession.mainTarget ? Math.round((spacedSession.mainCorrect / spacedSession.mainTarget) * 100) : 0;
+  const skillRows = [...currentReviewStates.values()].sort((a, b) => Number(a.stage || 0) - Number(b.stage || 0));
+  const reviewSoon = skillRows.filter(item => timestampMillis(item.nextReviewAt) <= Date.now() + 4 * 24 * 60 * 60 * 1000).slice(0, 5);
+  const secure = skillRows.filter(item => Number(item.stage || 0) >= 3).slice(0, 5);
+  try {
+    await setDoc(doc(collection(db, "reviewSessions")), {
+      userId: auth.currentUser.uid,
+      classId: currentProfile.classId,
+      mainQuestions: spacedSession.mainTarget,
+      correct: spacedSession.mainCorrect,
+      retryQuestions: spacedSession.retryAnswered,
+      percentage,
+      completedAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.warn("Session summary could not be saved:", error);
+  }
+  elements.spacedQuestionPanel.classList.add("hidden");
+  elements.spacedSummaryPanel.classList.remove("hidden");
+  elements.spacedSessionProgress.textContent = `${spacedSession.mainCorrect}/${spacedSession.mainTarget}`;
+  elements.spacedSummaryPanel.innerHTML = `
+    <div class="spaced-result-hero"><span class="spaced-result-score">${percentage}%</span><div><h3>Spaced practice complete</h3><p>${spacedSession.mainCorrect}/${spacedSession.mainTarget} main questions correct${spacedSession.retryAnswered ? ` · ${spacedSession.retryAnswered} quick retr${spacedSession.retryAnswered === 1 ? "y" : "ies"}` : ""}</p></div></div>
+    <div class="spaced-summary-grid">
+      <section><h4>Secure or strengthening</h4>${secure.length ? `<ul>${secure.map(item => `<li>${escapeHtml(SKILL_LABELS[item.skillId] || item.skillId)}</li>`).join("")}</ul>` : "<p>Keep reviewing to build secure long-term recall.</p>"}</section>
+      <section><h4>Review soon</h4>${reviewSoon.length ? `<ul>${reviewSoon.map(item => `<li>${escapeHtml(SKILL_LABELS[item.skillId] || item.skillId)}</li>`).join("")}</ul>` : "<p>No urgent reviews are due.</p>"}</section>
+    </div>
+    <div class="activity-actions"><button id="returnFromSpacedSummaryButton" type="button">Return to dashboard</button><button id="anotherSpacedSessionButton" type="button" class="secondary">Build another test</button></div>`;
+  elements.spacedSummaryPanel.querySelector("#returnFromSpacedSummaryButton").addEventListener("click", async () => {
+    showView("pupilView");
+    await loadPupilDashboard();
+  });
+  elements.spacedSummaryPanel.querySelector("#anotherSpacedSessionButton").addEventListener("click", async () => {
+    await loadSpacedLearningData();
+    startSpacedSession();
+  });
+}
+
+function startSpacedSession() {
+  const selected = selectSpacedQuestions();
+  if (!selected.length) {
+    showMessage("Complete at least one learning activity before starting spaced practice.", "error");
+    return;
+  }
+  spacedSession = {
+    queue: selected.map(question => ({ question, retry: false, answered: false })),
+    index: 0,
+    mainTarget: selected.length,
+    mainAnswered: 0,
+    mainCorrect: 0,
+    retryAnswered: 0,
+    retryQuestionIds: new Set()
+  };
+  elements.spacedIntroPanel.classList.add("hidden");
+  elements.spacedSummaryPanel.classList.add("hidden");
+  elements.spacedQuestionPanel.classList.remove("hidden");
+  renderSpacedQuestion();
+}
+
 async function loadPupilDashboard() {
   await loadPupilCustomActivities();
   await loadPupilProgress();
+  await loadSpacedLearningData();
   currentTask = null;
   currentActivity = null;
   resetOfficialResponseWorkspace();
@@ -1652,10 +2809,30 @@ async function loadPupilDashboard() {
     statCard(attempts, "Attempts")
   ].join("");
 
+  renderSpacedPracticeCard();
   renderAreaCards();
   elements.pathwayPanel.classList.remove("hidden");
   renderPathway();
 }
+
+elements.startSpacedPracticeButton.addEventListener("click", async () => {
+  clearMessage();
+  resetSpacedSessionView();
+  showView("spacedView");
+});
+
+elements.beginSpacedSessionButton.addEventListener("click", startSpacedSession);
+elements.submitSpacedAnswerButton.addEventListener("click", submitSpacedAnswer);
+elements.nextSpacedQuestionButton.addEventListener("click", () => {
+  if (!spacedSession) return;
+  spacedSession.index += 1;
+  if (spacedSession.index >= spacedSession.queue.length) void finishSpacedSession();
+  else renderSpacedQuestion();
+});
+elements.backFromSpacedButton.addEventListener("click", async () => {
+  showView("pupilView");
+  await loadPupilDashboard();
+});
 
 function openActivity(activity) {
   if (!isActivityUnlocked(activity)) {
@@ -1829,7 +3006,7 @@ function officialModelPanelMarkup(activity, progress = {}) {
       <p class="eyebrow">Teacher model answer</p>
       <h3>Compare your answer</h3>
       <p class="model-answer-note">Notice how the model answer uses specific details from the question where possible.</p>
-      <div class="model-answer-text">${escapeHtml(activity.modelAnswer || "Your teacher has not added a model answer yet.")}</div>
+      <div class="model-answer-text">${formatTeacherText(activity.modelAnswer || "Your teacher has not added a model answer yet.")}</div>
       ${(activity.markingPoints || []).length ? `<h4>Points that could gain marks</h4><ul>${activity.markingPoints.map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>` : ""}
       <div class="self-review-grid">
         <label>My estimated mark
@@ -1957,7 +3134,7 @@ function renderGenericActivity(activity) {
       await saveGenericProgress(activity, { writtenResponse: responseInput.value, markingPointsViewed: true });
       const panel = elements.activityInteraction.querySelector("#markingPointsPanel");
       panel.classList.remove("hidden");
-      panel.innerHTML = `<h3>Marking points</h3><ul>${(activity.markingPoints || []).map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>${activity.modelAnswer ? `<p><strong>Model answer:</strong> ${escapeHtml(activity.modelAnswer)}</p>` : ""}<button id="selfMarkCompleteButton" type="button">I have checked my answer</button>`;
+      panel.innerHTML = `<h3>Marking points</h3><ul>${(activity.markingPoints || []).map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>${activity.modelAnswer ? `<p><strong>Model answer:</strong> ${formatTeacherText(activity.modelAnswer)}</p>` : ""}<button id="selfMarkCompleteButton" type="button">I have checked my answer</button>`;
       panel.querySelector("#selfMarkCompleteButton").addEventListener("click", async () => {
         await saveGenericProgress(activity, { completed: true, writtenResponse: responseInput.value, selfMarked: true }, { correct: true });
         setGenericFeedback("Exam practice marked complete.", "success");
