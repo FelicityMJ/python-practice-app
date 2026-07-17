@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Python practice with classes, saved progress and code visualisation">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=4.0">
+  <link rel="stylesheet" href="styles.css?v=4.1">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>Python Practice</h1>
-      <p id="headerSubtitle">Practise, visualise and track your progress</p>
+      <p id="headerSubtitle">Learn in order, practise, visualise and prepare for the exam</p>
     </div>
     <div id="signedInControls" class="signed-in-controls hidden">
       <span id="currentUserLabel"></span>
@@ -86,7 +86,10 @@
           <h2>Teacher dashboard</h2>
           <p>Create a class, share its code and view pupil progress.</p>
         </div>
-        <button id="showCreateClassButton">Create class</button>
+        <div class="heading-actions">
+          <button id="showContentManagerButton" class="secondary">Manage content</button>
+          <button id="showCreateClassButton">Create class</button>
+        </div>
       </div>
 
       <section id="createClassPanel" class="card hidden">
@@ -98,6 +101,68 @@
           <button type="submit">Create</button>
           <button id="cancelCreateClassButton" type="button" class="secondary">Cancel</button>
         </form>
+      </section>
+
+      <section id="contentManagerPanel" class="card hidden">
+        <div class="panel-heading">
+          <div>
+            <h3>Curriculum content manager</h3>
+            <p>Add your own video explanations or links to official question papers. Items are placed into the ordered Python pathway.</p>
+          </div>
+          <button id="closeContentManagerButton" type="button" class="secondary">Close</button>
+        </div>
+
+        <form id="contentActivityForm" class="content-form">
+          <input id="editingActivityId" type="hidden">
+          <label>Activity type
+            <select id="contentTypeInput" required>
+              <option value="video">Video explanation</option>
+              <option value="official-paper">Official paper link</option>
+            </select>
+          </label>
+          <label>Python unit
+            <select id="contentUnitInput" required></select>
+          </label>
+          <label>Order within unit
+            <input id="contentOrderInput" type="number" min="0" step="0.1" value="1.5" required>
+          </label>
+          <label class="wide-field">Title
+            <input id="contentTitleInput" maxlength="100" required>
+          </label>
+          <label class="wide-field">Description
+            <textarea id="contentDescriptionInput" class="small-textarea" maxlength="600" placeholder="What pupils should learn or which question they should attempt."></textarea>
+          </label>
+          <label class="wide-field">Video or official paper URL
+            <input id="contentUrlInput" type="url" required placeholder="https://...">
+          </label>
+          <label>Skills, separated by commas
+            <input id="contentSkillsInput" placeholder="variables, data-types">
+          </label>
+          <label id="contentYearLabel">Paper year
+            <input id="contentYearInput" type="number" min="2000" max="2100" value="2025">
+          </label>
+          <label id="contentQuestionLabel">Question reference
+            <input id="contentQuestionInput" placeholder="Question 3(a)">
+          </label>
+          <label id="contentCheckpointLabel" class="wide-field">Video checkpoint question
+            <input id="contentCheckpointInput" placeholder="What is the main idea pupils should understand?">
+          </label>
+          <label id="contentOptionsLabel" class="wide-field">Checkpoint options — one per line
+            <textarea id="contentOptionsInput" class="small-textarea" placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+          </label>
+          <label id="contentAnswerLabel">Correct option number
+            <input id="contentAnswerInput" type="number" min="1" value="1">
+          </label>
+          <label class="checkbox-label"><input id="contentRequiredInput" type="checkbox"> Required in the main sequence</label>
+          <label class="checkbox-label"><input id="contentPublishedInput" type="checkbox" checked> Visible to pupils</label>
+          <div class="content-form-actions wide-field">
+            <button id="saveContentActivityButton" type="submit">Add activity</button>
+            <button id="cancelEditContentButton" type="button" class="secondary hidden">Cancel edit</button>
+          </div>
+        </form>
+
+        <h4>Your added content</h4>
+        <div id="customContentList" class="content-list"><p class="help-text">No custom content loaded yet.</p></div>
       </section>
 
       <section id="teacherSummary" class="stats-grid"></section>
@@ -139,7 +204,37 @@
         <div id="pupilProgressBadge" class="progress-badge"></div>
       </div>
       <section id="topicSummary" class="stats-grid"></section>
-      <section id="taskList" class="task-grid"></section>
+      <section id="areaCards" class="area-grid"></section>
+
+      <section id="pathwayPanel" class="hidden">
+        <div class="pathway-heading card">
+          <div>
+            <p class="eyebrow">Software Design and Development</p>
+            <h3>Python foundations pathway</h3>
+            <p>Complete the required activities in order. Optional official-paper practice appears beside the skills it matches.</p>
+          </div>
+          <button id="continueActivityButton">Continue next activity</button>
+        </div>
+        <div id="unitList" class="unit-list"></div>
+      </section>
+    </section>
+
+    <section id="activityView" class="hidden">
+      <button id="backFromActivityButton" class="secondary">← Back to pathway</button>
+      <section class="card activity-card">
+        <div class="challenge-heading">
+          <div>
+            <p id="activityTypeLabel" class="eyebrow"></p>
+            <h2 id="activityTitle"></h2>
+            <p id="activityUnitLabel" class="help-text"></p>
+          </div>
+          <span id="activityStatus" class="status-pill"></span>
+        </div>
+        <div id="activityContent"></div>
+        <div id="activityInteraction"></div>
+        <div id="activityFeedback" class="feedback hidden" aria-live="polite"></div>
+      </section>
+      <section id="activityRelatedPractice" class="card hidden"></section>
     </section>
 
     <section id="challengeView" class="hidden">
@@ -153,6 +248,7 @@
           <span id="challengeStatus" class="status-pill"></span>
         </div>
         <div id="challengeInstructions" class="instructions"></div>
+        <p id="sampleInputNote" class="sample-input-note hidden"></p>
         <p><strong>Expected output:</strong></p>
         <pre id="expectedOutput" class="expected-output"></pre>
       </section>
@@ -193,6 +289,8 @@
         <pre id="standardErrorBox" class="console error-console"></pre>
         <div id="friendlyErrorBox" class="friendly-error hidden"></div>
       </section>
+
+      <section id="challengeRelatedPractice" class="card hidden"></section>
 
       <section id="visualiserPanel" class="card visualiser-panel hidden">
         <div class="panel-heading">
@@ -238,9 +336,9 @@
   </main>
 
   <footer>
-    <p>Python Practice prototype v4.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v4.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
-  <script type="module" src="app.js?v=4.0"></script>
+  <script type="module" src="app.js?v=4.1"></script>
 </body>
 </html>
