@@ -180,8 +180,12 @@ const ACTIVITIES = [
     title: "Exam practice: Improve readability", skills: ["readability", "comments", "identifiers"],
     questionHtml: `<p>A programmer has used no comments and has placed all instructions close together.</p><p><strong>State one other way the programmer could improve the readability of the code.</strong> <span class="mark-chip">1 mark</span></p>`,
     marks: 1,
-    markingPoints: ["Use meaningful variable names or meaningful identifiers.", "Use suitable indentation where appropriate."],
-    modelAnswer: "Use meaningful variable names so that the purpose of each value is clear."
+    markingPoints: [
+      "Use meaningful variable names or meaningful identifiers.",
+      "Where the question provides variable names, refer to them directly and suggest a clearer replacement.",
+      "Use suitable indentation where appropriate."
+    ],
+    modelAnswer: "Use meaningful variable names that describe what each value stores. For example, an unclear name such as abc could be replaced with total if it stores a total. This makes the code easier to understand."
   }),
   official({
     id: "SDD-PY-01-O1", areaId: "sdd", unitId: "sdd-python-01", order: 10,
@@ -190,10 +194,11 @@ const ACTIVITIES = [
     officialUrl: `${paper2025}#page=3`,
     marks: 1,
     markingPoints: [
-      "Use meaningful variable names that make the purpose of stored values clear.",
+      "Refer to the unclear names abc and xyz and explain that they should be replaced with meaningful variable names.",
+      "Give a suitable example linked to what the variable stores, such as total if abc stores a total or count if xyz stores a count.",
       "Use consistent indentation to make the program structure easier to follow."
     ],
-    modelAnswer: "Use meaningful variable names so it is clear what each value represents.",
+    modelAnswer: "Replace unclear variable names such as abc and xyz with names that describe the data they store. For example, if abc stores a total, rename it total; if xyz stores a count, rename it count. This makes the program easier to read and understand.",
     description: "Open the official 2025 paper and attempt Question 3(b). The app links to the paper rather than reproducing the copyrighted question."
   }),
 
@@ -536,7 +541,7 @@ const firebaseConfig = {
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
 
-const APP_VERSION = "4.1.4";
+const APP_VERSION = "4.1.5";
 console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -1823,6 +1828,7 @@ function officialModelPanelMarkup(activity, progress = {}) {
     <div class="model-answer-panel">
       <p class="eyebrow">Teacher model answer</p>
       <h3>Compare your answer</h3>
+      <p class="model-answer-note">Notice how the model answer uses specific details from the question where possible.</p>
       <div class="model-answer-text">${escapeHtml(activity.modelAnswer || "Your teacher has not added a model answer yet.")}</div>
       ${(activity.markingPoints || []).length ? `<h4>Points that could gain marks</h4><ul>${activity.markingPoints.map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>` : ""}
       <div class="self-review-grid">
@@ -1835,6 +1841,19 @@ function officialModelPanelMarkup(activity, progress = {}) {
       </div>
       <button id="completeOfficialReviewButton" type="button">Save reflection and complete review</button>
     </div>`;
+}
+
+function specificAnswerGuidanceMarkup() {
+  return `
+    <aside class="answer-quality-tip">
+      <strong>Make your answer secure</strong>
+      <ol>
+        <li>State the computing point clearly.</li>
+        <li>Use exact details from the question where possible — for example variable names, values, field names or code.</li>
+        <li>Explain how or why your point answers the question.</li>
+      </ol>
+      <p>Examples strengthen an answer, although they are not always a separate mark.</p>
+    </aside>`;
 }
 
 function renderGenericActivity(activity) {
@@ -1918,8 +1937,9 @@ function renderGenericActivity(activity) {
   } else if (activity.type === "exam-style") {
     elements.activityContent.innerHTML = activity.questionHtml || `<p>${escapeHtml(activity.description || "Complete the exam-style question.")}</p>`;
     elements.activityInteraction.innerHTML = `
+      ${specificAnswerGuidanceMarkup()}
       <label>Your answer
-        <textarea id="writtenResponseInput" class="written-response" placeholder="Write your answer before revealing the marking points.">${escapeHtml(progress.writtenResponse || "")}</textarea>
+        <textarea id="writtenResponseInput" class="written-response" placeholder="Write a precise answer. Use names, values or examples from the question where possible.">${escapeHtml(progress.writtenResponse || "")}</textarea>
       </label>
       <div class="activity-actions">
         <button id="saveWrittenResponseButton" type="button" class="save-button">Save progress</button>
@@ -1960,6 +1980,7 @@ function renderGenericActivity(activity) {
 
     elements.activityInteraction.innerHTML = `
       <section class="exam-answer-workspace">
+        ${specificAnswerGuidanceMarkup()}
         <div class="workspace-heading">
           <div>
             <p class="eyebrow">My answer</p>
@@ -1968,7 +1989,7 @@ function renderGenericActivity(activity) {
           </div>
           <span id="officialSaveStatus" class="save-status">${progress.writtenResponse !== undefined ? "Saved answer loaded" : "No unsaved changes"}</span>
         </div>
-        <textarea id="officialResponseInput" class="written-response official-response" placeholder="Write your answer here...">${escapeHtml(progress.writtenResponse || "")}</textarea>
+        <textarea id="officialResponseInput" class="written-response official-response" placeholder="Write a precise answer. Refer to exact names, values or code from the question where possible.">${escapeHtml(progress.writtenResponse || "")}</textarea>
         ${progress.originalSubmission ? `<div class="submission-note"><strong>First submission preserved.</strong> You may improve the working answer above, but your teacher can still see your original response.</div>` : ""}
         <div class="activity-actions">
           <button id="saveOfficialAnswerButton" type="button" class="save-button">Save answer</button>

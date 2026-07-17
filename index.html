@@ -147,11 +147,11 @@
           <label id="contentMarksLabel">Marks available
             <input id="contentMarksInput" type="number" min="1" max="20" value="1">
           </label>
-          <label id="contentMarkingPointsLabel" class="wide-field">Teacher marking points — one per line
-            <textarea id="contentMarkingPointsInput" class="small-textarea" placeholder="One acceptable point per line"></textarea>
+          <label id="contentMarkingPointsLabel" class="wide-field">Teacher marking points — one per line; include question-specific details where helpful
+            <textarea id="contentMarkingPointsInput" class="small-textarea" placeholder="One acceptable point per line. Mention exact variables, fields, values or code from the question where helpful."></textarea>
           </label>
           <label id="contentModelAnswerLabel" class="wide-field">Teacher-written model answer
-            <textarea id="contentModelAnswerInput" class="small-textarea" maxlength="1500" placeholder="Write your own model answer in pupil-friendly language."></textarea>
+            <textarea id="contentModelAnswerInput" class="small-textarea" maxlength="1500" placeholder="Write a pupil-friendly model answer. Use exact names, values or examples from the question where possible."></textarea>
           </label>
           <label id="contentCheckpointLabel" class="wide-field">Video checkpoint question
             <input id="contentCheckpointInput" placeholder="What is the main idea pupils should understand?">
@@ -369,7 +369,7 @@
   </main>
 
   <footer>
-    <p>Python Practice prototype v4.1.4 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v4.1.5 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -386,6 +386,6 @@
     }, 4000);
   </script>
 
-  <script type="module" src="app.js?v=4.1.4"></script>
+  <script type="module" src="app.js?v=4.1.5"></script>
 </body>
 </html>
