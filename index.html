@@ -336,9 +336,23 @@
   </main>
 
   <footer>
-    <p>Python Practice prototype v4.1.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v4.1.2 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
-  <script type="module" src="app.js?v=4.1.1"></script>
+
+  <script>
+    window.PYTHON_PRACTICE_READY = false;
+    window.setTimeout(function () {
+      if (window.PYTHON_PRACTICE_READY) return;
+      var box = document.getElementById("messageBox");
+      if (!box) return;
+      box.textContent =
+        "The application code did not load. Refresh the page with Ctrl + F5. " +
+        "If this message remains, check that index.html and app.js were both replaced.";
+      box.className = "message error";
+    }, 4000);
+  </script>
+
+  <script type="module" src="app.js?v=4.1.2"></script>
 </body>
 </html>

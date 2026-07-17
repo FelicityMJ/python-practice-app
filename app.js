@@ -513,7 +513,7 @@ const firebaseConfig = {
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
 
-const APP_VERSION = "4.1.1";
+const APP_VERSION = "4.1.2";
 console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -2354,8 +2354,7 @@ elements.checkButton.addEventListener("click", async () => {
 
     elements.feedbackBox.textContent = grading.correct
       ? "Correct — well done! Your progress has been saved."
-      : grading.feedback.join("
-");
+      : grading.feedback.join("\n");
     elements.feedbackBox.className = `feedback ${grading.correct ? "success" : "error"}`;
     await saveAttempt(grading.correct, tests.error, grading.feedback);
     if (grading.correct) {
@@ -2652,3 +2651,6 @@ window.addEventListener("beforeunload", event => {
     event.preventDefault();
   }
 });
+
+
+window.PYTHON_PRACTICE_READY = true;
