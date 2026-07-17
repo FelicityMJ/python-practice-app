@@ -509,3 +509,72 @@ footer { text-align: center; color: var(--muted); padding: 20px; font-size: .9re
   .class-focus-panel, .peer-review-grid, .area-result-grid, .area-recall-grid { grid-template-columns: 1fr; }
   .peer-marking-card { align-items: stretch; flex-direction: column; }
 }
+
+
+/* v4.3.3 design representations and spaced-practice diagrams */
+.representation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.representation-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  background: #f8faff;
+}
+
+.representation-card h4 { margin: 0 0 12px; }
+.design-svg,
+.spaced-design-svg {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  margin: 12px auto;
+  font-family: inherit;
+  font-size: 14px;
+}
+.wide-design-svg { max-width: 760px; }
+
+.flow-start-end { fill: #eef2ff; stroke: #5068e8; stroke-width: 2; }
+.flow-input-output { fill: #eefaf6; stroke: #2f8a76; stroke-width: 2; }
+.flow-process { fill: #fff7e9; stroke: #bd741c; stroke-width: 2; }
+.flow-decision { fill: #fff0f4; stroke: #bb4864; stroke-width: 2; }
+.flow-line,
+.structure-line { stroke: #27324a; stroke-width: 2; fill: none; }
+.flow-arrow { fill: #27324a; }
+.structure-node-main { fill: #eaf0ff; stroke: #5068e8; stroke-width: 2; }
+.structure-node { fill: #f5f7fb; stroke: #596579; stroke-width: 2; }
+
+.spaced-diagram {
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  overflow-x: auto;
+}
+
+.symbol-choice-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(100px, 1fr));
+  gap: 14px;
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+  font-weight: 800;
+}
+.symbol-choice-row > div {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  background: #f8faff;
+}
+.symbol-svg { width: 100%; max-width: 120px; height: auto; display: block; margin: 0 auto 4px; }
+
+@media (max-width: 620px) {
+  .symbol-choice-row { grid-template-columns: 1fr; }
+}
