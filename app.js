@@ -1265,7 +1265,7 @@ const firebaseConfig = {
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
 
-const APP_VERSION = "4.2";
+const APP_VERSION = "4.3";
 console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -1308,6 +1308,12 @@ let currentReviewAttempts = [];
 let currentClassQuestionStats = new Map();
 let spacedSession = null;
 let spacedQuestionStartedAt = 0;
+let spacedCountdownTimer = null;
+let currentClassSettings = {};
+let activePeerReview = null;
+let activeTeacherClass = null;
+let peerGreenTokens = new Set();
+let peerRedTokens = new Set();
 const SPACED_INTERVAL_DAYS = [1, 2, 4, 7, 14, 30, 60];
 
 const LEGACY_ACTIVITY_MAP = {
@@ -1328,7 +1334,7 @@ function clearMessage() {
 }
 
 function showView(viewId) {
-  ["authView", "teacherView", "pupilView", "spacedView", "activityView", "challengeView"].forEach(id => {
+  ["authView", "teacherView", "pupilView", "spacedView", "peerReviewView", "activityView", "challengeView"].forEach(id => {
     elements[id].classList.toggle("hidden", id !== viewId);
   });
   elements.homeButton.classList.toggle("hidden", viewId === "authView");
@@ -1373,6 +1379,50 @@ function formatTeacherText(value) {
 
 function unitById(unitId) {
   return UNITS.find(unit => unit.id === unitId) || null;
+}
+
+function areaById(areaId) {
+  return AREAS.find(area => area.id === areaId) || { id: areaId || "sdd", shortTitle: String(areaId || "SDD").toUpperCase(), title: String(areaId || "SDD").toUpperCase() };
+}
+
+function spacedQuestionAreaId(question) {
+  return question.areaId || unitById(question.unitId)?.areaId || "sdd";
+}
+
+function spacedQuestionModuleLabel(question) {
+  const unit = unitById(question.unitId);
+  return unit?.title || question.moduleTitle || "Review";
+}
+
+const SPACED_REASON_LABELS = {
+  current_topic: "Current topic",
+  due_review: "Due for review",
+  earlier_learning: "Earlier learning",
+  interleaved_area: "Interleaved topic",
+  needs_practice: "Needs more practice",
+  class_misconception: "Common class misconception",
+  long_term: "Long-term retention",
+  new_retrieval: "New retrieval question"
+};
+
+function latestLearningContext() {
+  const rows = [...currentProgress.entries()].map(([activityId, progress]) => {
+    const activity = allActivities.find(item => item.id === activityId);
+    return {
+      activity,
+      time: timestampMillis(progress.lastActivityAt || progress.lastSavedAt || progress.completedAt || progress.lastAttemptAt)
+    };
+  }).filter(row => row.activity).sort((a, b) => b.time - a.time);
+  return rows[0]?.activity || allActivities.find(item => item.required) || { areaId: "sdd", unitId: "sdd-python-01" };
+}
+
+function currentLearningContext() {
+  const latest = latestLearningContext();
+  const focusAreaId = currentClassSettings.reviewFocusAreaId && currentClassSettings.reviewFocusAreaId !== "auto"
+    ? currentClassSettings.reviewFocusAreaId
+    : latest.areaId;
+  const focusUnitId = currentClassSettings.reviewFocusUnitId || (latest.areaId === focusAreaId ? latest.unitId : "");
+  return { areaId: focusAreaId || "sdd", unitId: focusUnitId || "" };
 }
 
 function areaById(areaId) {
@@ -2008,13 +2058,14 @@ async function getTeacherClasses() {
 }
 
 async function classDataWithStats(classItem) {
-  const [memberSnapshot, progressSnapshot, reviewAttemptSnapshot, reviewStateSnapshot, reviewSessionSnapshot, questionStatsSnapshot] = await Promise.all([
+  const [memberSnapshot, progressSnapshot, reviewAttemptSnapshot, reviewStateSnapshot, reviewSessionSnapshot, questionStatsSnapshot, peerReviewSnapshot] = await Promise.all([
     getDocs(collection(db, "classes", classItem.id, "members")),
     getDocs(query(collection(db, "progress"), where("classId", "==", classItem.id))),
     getDocs(query(collection(db, "reviewAttempts"), where("classId", "==", classItem.id))),
     getDocs(query(collection(db, "reviewStates"), where("classId", "==", classItem.id))),
     getDocs(query(collection(db, "reviewSessions"), where("classId", "==", classItem.id))),
-    getDocs(query(collection(db, "reviewQuestionStats"), where("classId", "==", classItem.id)))
+    getDocs(query(collection(db, "reviewQuestionStats"), where("classId", "==", classItem.id))),
+    getDocs(collection(db, "classes", classItem.id, "peerReviews"))
   ]);
   const members = memberSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
   const progress = progressSnapshot.docs.map(item => item.data());
@@ -2022,7 +2073,8 @@ async function classDataWithStats(classItem) {
   const reviewStates = reviewStateSnapshot.docs.map(item => item.data());
   const reviewSessions = reviewSessionSnapshot.docs.map(item => item.data());
   const questionStats = questionStatsSnapshot.docs.map(item => item.data());
-  return { ...classItem, members, progress, reviewAttempts, reviewStates, reviewSessions, questionStats };
+  const peerReviews = peerReviewSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+  return { ...classItem, members, progress, reviewAttempts, reviewStates, reviewSessions, questionStats, peerReviews };
 }
 
 async function loadTeacherDashboard() {
@@ -2084,6 +2136,8 @@ function progressStatus(progress) {
 
 
 function paperResponseStatus(response) {
+  if (response.peerReviewStatus === "queued" || response.peerReviewStatus === "assigned") return "Peer check pending";
+  if (response.peerReviewStatus === "finalised") return "Peer reviewed";
   if (response.completed) return "Reviewed";
   if (response.submitted) return "Submitted";
   if (response.writtenResponse !== undefined) return "Draft saved";
@@ -2209,10 +2263,59 @@ function renderSpacedClassOverview(classItem) {
     statCard(weakest ? escapeHtml(SKILL_LABELS[weakest.skillId] || weakest.skillId) : "—", "Most insecure skill")
   ].join("");
 
+  const byArea = new Map();
+  attempts.forEach(attempt => {
+    const areaId = attempt.areaId || "sdd";
+    const row = byArea.get(areaId) || { attempts: 0, correct: 0 };
+    row.attempts += 1;
+    if (attempt.correct) row.correct += 1;
+    byArea.set(areaId, row);
+  });
+  elements.spacedAreaStats.innerHTML = AREAS.map(area => {
+    const row = byArea.get(area.id) || { attempts: 0, correct: 0 };
+    const rate = row.attempts ? Math.round((row.correct / row.attempts) * 100) : 0;
+    return `<div class="area-recall-card"><span class="area-badge area-${escapeHtml(area.id)}">${escapeHtml(area.shortTitle)}</span><strong>${row.attempts ? `${rate}%` : "—"}</strong><span>${row.attempts} response${row.attempts === 1 ? "" : "s"}</span></div>`;
+  }).join("");
+
   elements.spacedSkillStatsBody.innerHTML = skillRows.slice(0, 12).map(row => {
     const rate = row.attempts ? Math.round((row.correct / row.attempts) * 100) : 0;
     return `<tr><td><strong>${escapeHtml(SKILL_LABELS[row.skillId] || row.skillId)}</strong></td><td>${row.attempts}</td><td>${row.attempts ? `${rate}%` : "No attempts"}</td><td>${row.due}</td></tr>`;
   }).join("") || `<tr><td colspan="4">No spaced-learning responses have been collected yet.</td></tr>`;
+}
+
+function renderPeerReviewOverview(classItem) {
+  const memberMap = new Map(classItem.members.map(member => [member.userId, member]));
+  const reviews = classItem.peerReviews || [];
+  elements.peerReviewCount.textContent = `${reviews.length} review${reviews.length === 1 ? "" : "s"}`;
+  elements.peerReviewBody.innerHTML = reviews.map(review => {
+    const author = memberMap.get(review.authorId);
+    const reviewer = memberMap.get(review.reviewerId);
+    return `<tr>
+      <td><strong>${escapeHtml(author?.displayName || "Unknown pupil")}</strong></td>
+      <td>${escapeHtml(review.activityTitle || review.activityId || "Official-paper answer")}</td>
+      <td>${review.selfAssessedMark !== undefined ? `${review.selfAssessedMark}/${review.maxMarks}` : "—"}</td>
+      <td>${review.peerSuggestedMark !== undefined ? `${review.peerSuggestedMark}/${review.maxMarks}` : "—"}</td>
+      <td>${review.finalMark !== undefined ? `${review.finalMark}/${review.maxMarks}` : "—"}</td>
+      <td>${escapeHtml(review.status || "queued")}</td>
+      <td>${escapeHtml(reviewer?.displayName || (review.status === "queued" ? "Waiting" : "Anonymous pupil"))}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7">No peer-marking requests yet.</td></tr>`;
+}
+
+function populateClassFocusControls(classItem) {
+  activeTeacherClass = classItem;
+  const areaInput = elements.classFocusAreaInput;
+  const unitInput = elements.classFocusUnitInput;
+  areaInput.value = classItem.reviewFocusAreaId || "auto";
+  const populateUnits = () => {
+    const areaId = areaInput.value;
+    const units = UNITS.filter(unit => areaId === "auto" || unit.areaId === areaId);
+    unitInput.innerHTML = `<option value="">Automatic / whole area</option>${units.map(unit => `<option value="${escapeHtml(unit.id)}">${escapeHtml(unit.title)}</option>`).join("")}`;
+    unitInput.value = classItem.reviewFocusUnitId || "";
+  };
+  areaInput.onchange = populateUnits;
+  populateUnits();
+  elements.classFocusSaveStatus.textContent = "";
 }
 
 function showClassDetails(classItem) {
@@ -2220,6 +2323,7 @@ function showClassDetails(classItem) {
   const coreCount = coreIds.size;
   elements.classDetailTitle.textContent = classItem.name;
   elements.classDetailMeta.textContent = `Class code: ${classItem.joinCode}`;
+  populateClassFocusControls(classItem);
 
   const completedCount = classItem.progress.filter(item => item.completed && coreIds.has(item.taskId)).length;
   const activeCount = classItem.progress.filter(item => !item.completed).length;
@@ -2264,12 +2368,31 @@ function showClassDetails(classItem) {
 
   renderSpacedClassOverview(classItem);
   renderPaperResponses(classItem);
+  renderPeerReviewOverview(classItem);
   elements.classDetailPanel.classList.remove("hidden");
   elements.classDetailPanel.scrollIntoView({ behavior: "smooth" });
 }
 
 elements.closeClassDetailButton.addEventListener("click", () => {
   elements.classDetailPanel.classList.add("hidden");
+});
+
+elements.saveClassFocusButton.addEventListener("click", async () => {
+  if (!activeTeacherClass) return;
+  elements.classFocusSaveStatus.textContent = "Saving…";
+  try {
+    const data = {
+      reviewFocusAreaId: elements.classFocusAreaInput.value,
+      reviewFocusUnitId: elements.classFocusUnitInput.value,
+      reviewFocusUpdatedAt: serverTimestamp()
+    };
+    await setDoc(doc(db, "classes", activeTeacherClass.id), data, { merge: true });
+    Object.assign(activeTeacherClass, data);
+    elements.classFocusSaveStatus.textContent = "Focus saved";
+  } catch (error) {
+    console.error(error);
+    elements.classFocusSaveStatus.textContent = "Could not save focus";
+  }
 });
 
 async function loadUserPreferences() {
@@ -2448,7 +2571,9 @@ function eligibleSpacedQuestions() {
       .filter(Boolean)
   );
   if (!startedUnits.size) startedUnits.add("sdd-python-01");
-  return SPACED_QUESTIONS.filter(question => startedUnits.has(question.unitId));
+  return SPACED_QUESTIONS
+    .map(question => ({ ...question, areaId: spacedQuestionAreaId(question) }))
+    .filter(question => startedUnits.has(question.unitId));
 }
 
 async function loadSpacedLearningData() {
@@ -2498,71 +2623,130 @@ function ownSkillAccuracy() {
   return map;
 }
 
+function personalQuestionSort(items) {
+  const now = Date.now();
+  const skillAccuracy = ownSkillAccuracy();
+  const weakness = question => {
+    const rows = (question.skills || []).map(skill => skillAccuracy.get(skill)).filter(Boolean);
+    if (!rows.length) return 0.5;
+    return 1 - Math.min(...rows.map(row => row.attempts ? row.correct / row.attempts : 0.5));
+  };
+  return [...items].sort((a, b) => {
+    const dueA = questionNextReview(a);
+    const dueB = questionNextReview(b);
+    const isDueA = dueA > 0 && dueA <= now ? 0 : 1;
+    const isDueB = dueB > 0 && dueB <= now ? 0 : 1;
+    return isDueA - isDueB || weakness(b) - weakness(a) || questionStage(a) - questionStage(b) || questionLastReviewed(a) - questionLastReviewed(b);
+  });
+}
+
 function selectSpacedQuestions() {
   const pool = eligibleSpacedQuestions();
+  const context = currentLearningContext();
   const now = Date.now();
   const selected = [];
   const used = new Set();
-  const add = question => {
+  const add = (question, reason) => {
     if (!question || used.has(question.id) || selected.length >= 10) return false;
     used.add(question.id);
-    selected.push(question);
+    selected.push({ question, reason });
     return true;
   };
-  const addFrom = (items, limit) => {
+  const addFrom = (items, limit, reason) => {
     let count = 0;
-    items.forEach(item => { if (count < limit && add(item)) count += 1; });
+    personalQuestionSort(items).forEach(question => {
+      if (count < limit && add(question, typeof reason === "function" ? reason(question) : reason)) count += 1;
+    });
   };
 
-  const due = [...pool].sort((a, b) => {
-    const dueA = questionNextReview(a);
-    const dueB = questionNextReview(b);
-    const overdueA = dueA <= now ? 0 : 1;
-    const overdueB = dueB <= now ? 0 : 1;
-    return overdueA - overdueB || questionStage(a) - questionStage(b) || dueA - dueB || questionLastReviewed(a) - questionLastReviewed(b);
-  });
-  addFrom(due.filter(question => questionNextReview(question) <= now), 5);
+  const currentUnit = context.unitId ? pool.filter(question => question.unitId === context.unitId) : [];
+  const currentArea = pool.filter(question => question.areaId === context.areaId && question.unitId !== context.unitId);
+  const otherAreas = pool.filter(question => question.areaId !== context.areaId);
+  const due = pool.filter(question => questionNextReview(question) > 0 && questionNextReview(question) <= now);
+
+  // The intended mix is 5 current, 2 earlier in the same area, 2 other areas and 1 personal priority.
+  addFrom(currentUnit.length ? currentUnit : pool.filter(question => question.areaId === context.areaId), 5, "current_topic");
+  addFrom(currentArea, 2, question => questionNextReview(question) > 0 && questionNextReview(question) <= now ? "due_review" : "earlier_learning");
+  addFrom(otherAreas, 2, question => questionNextReview(question) > 0 && questionNextReview(question) <= now ? "due_review" : "interleaved_area");
 
   const skillAccuracy = ownSkillAccuracy();
-  const weakSkills = [...new Set(pool.flatMap(question => question.skills || []))]
-    .sort((a, b) => {
-      const aRow = skillAccuracy.get(a);
-      const bRow = skillAccuracy.get(b);
-      const aRate = aRow?.attempts ? aRow.correct / aRow.attempts : questionStage({ skills: [a] }) / 10;
-      const bRate = bRow?.attempts ? bRow.correct / bRow.attempts : questionStage({ skills: [b] }) / 10;
-      return aRate - bRate;
-    });
-  addFrom(weakSkills.flatMap(skill => pool.filter(question => question.skills.includes(skill)).sort((a, b) => questionLastReviewed(a) - questionLastReviewed(b))), 2);
+  const weak = pool.filter(question => (question.skills || []).some(skill => {
+    const row = skillAccuracy.get(skill);
+    return row?.attempts && (row.correct / row.attempts) < 0.7;
+  }));
+  addFrom(weak, 1, "needs_practice");
+  addFrom(due, 10, "due_review");
 
   const classMisconceptions = pool
     .filter(question => Number(currentClassQuestionStats.get(question.id)?.attempts || 0) >= 3)
     .sort((a, b) => classQuestionRate(a) - classQuestionRate(b));
-  addFrom(classMisconceptions, 1);
+  addFrom(classMisconceptions, 1, "class_misconception");
 
-  const masteredOld = pool
-    .filter(question => questionStage(question) >= 3)
-    .sort((a, b) => questionLastReviewed(a) - questionLastReviewed(b));
-  addFrom(masteredOld, 1);
-
+  const masteredOld = pool.filter(question => questionStage(question) >= 3);
+  addFrom(masteredOld, 1, "long_term");
   const unseen = pool.filter(question => !currentReviewAttempts.some(item => item.questionId === question.id));
-  addFrom(unseen, 10);
-  addFrom(due, 10);
+  addFrom(unseen, 10, "new_retrieval");
+  addFrom(pool, 10, "earlier_learning");
   return selected.slice(0, 10);
 }
 
-function spacedDueCount() {
+function eligibleReviewSkillIds() {
+  return new Set(eligibleSpacedQuestions().flatMap(question => question.skills || []));
+}
+
+function spacedScheduleInfo() {
+  const eligibleSkills = eligibleReviewSkillIds();
+  const states = [...currentReviewStates.values()].filter(state => eligibleSkills.has(state.skillId));
   const now = Date.now();
-  return eligibleSpacedQuestions().filter(question => questionNextReview(question) <= now).length;
+  if (!states.length) return { due: 0, next: 0, initial: true };
+  const due = states.filter(state => timestampMillis(state.nextReviewAt) <= now).length;
+  const future = states.map(state => timestampMillis(state.nextReviewAt)).filter(value => value > now).sort((a, b) => a - b);
+  return { due, next: future[0] || 0, initial: false };
+}
+
+function formatCountdown(milliseconds) {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  if (days) return `${days}d ${hours}h`;
+  if (hours) return `${hours}h ${minutes}m`;
+  if (minutes) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
+}
+
+function updateSpacedCountdown() {
+  if (!elements.spacedCountdownText) return;
+  const info = spacedScheduleInfo();
+  if (info.initial) {
+    elements.spacedCountdownText.textContent = "Your first spaced-learning session is ready now.";
+    return;
+  }
+  if (info.due > 0) {
+    elements.spacedCountdownText.textContent = `${info.due} skill${info.due === 1 ? " is" : "s are"} due for review now.`;
+    return;
+  }
+  if (info.next) {
+    elements.spacedCountdownText.textContent = `Next scheduled review in ${formatCountdown(info.next - Date.now())}. Extra practice is available now.`;
+    return;
+  }
+  elements.spacedCountdownText.textContent = "No scheduled reviews are waiting. Extra mixed practice is available.";
 }
 
 function renderSpacedPracticeCard() {
-  const due = spacedDueCount();
+  const info = spacedScheduleInfo();
   const eligible = eligibleSpacedQuestions().length;
-  elements.spacedPracticeDescription.textContent = due
-    ? `${due} question${due === 1 ? " is" : "s are"} ready for review. Your test will mix due skills with older learning.`
-    : "No reviews are overdue, so the app will give you a mixed retrieval check from learned topics.";
-  elements.spacedPracticeMeta.innerHTML = `<span class="activity-chip">${Math.min(10, eligible)} main questions</span><span class="activity-chip">About 10 minutes</span><span class="activity-chip">Personalised</span>`;
+  const studiedAreas = new Set(eligibleSpacedQuestions().map(question => question.areaId));
+  elements.spacedPracticeDescription.textContent = info.due
+    ? "Your session will prioritise due skills, then interleave current and earlier course areas."
+    : "You can practise early. The session mainly focuses on your current topic and interleaves earlier modules you have studied.";
+  elements.spacedPracticeMeta.innerHTML = `<span class="activity-chip">${Math.min(10, eligible)} main questions</span><span class="activity-chip">${studiedAreas.size} course area${studiedAreas.size === 1 ? "" : "s"}</span><span class="activity-chip">Personalised</span>`;
+  elements.startSpacedPracticeButton.textContent = info.due || info.initial ? "Start my spaced practice" : "Start extra practice";
   elements.startSpacedPracticeButton.disabled = eligible === 0;
+  if (spacedCountdownTimer !== null) clearInterval(spacedCountdownTimer);
+  updateSpacedCountdown();
+  spacedCountdownTimer = setInterval(updateSpacedCountdown, 1000);
 }
 
 function updateReviewStateData(old, skillId, correct, confidence) {
@@ -2603,7 +2787,9 @@ async function saveSpacedAnswer(question, selectedAnswer, confidence, correct, r
     userId: auth.currentUser.uid,
     classId: currentProfile.classId,
     questionId: question.id,
+    areaId: spacedQuestionAreaId(question),
     unitId: question.unitId,
+    moduleTitle: spacedQuestionModuleLabel(question),
     skillIds: question.skills || [],
     selectedAnswer,
     correct,
@@ -2661,8 +2847,10 @@ function renderSpacedQuestion() {
   const item = spacedSession?.queue[spacedSession.index];
   if (!item) return finishSpacedSession();
   const question = item.question;
+  const area = areaById(spacedQuestionAreaId(question));
   const mainNumber = item.retry ? "Quick retry" : `Question ${Math.min(spacedSession.mainAnswered + 1, spacedSession.mainTarget)} of ${spacedSession.mainTarget}`;
   elements.spacedSessionProgress.textContent = mainNumber;
+  elements.spacedQuestionMeta.innerHTML = `<span class="area-badge area-${escapeHtml(area.id)}">${escapeHtml(area.shortTitle)}</span><span class="activity-chip">${escapeHtml(spacedQuestionModuleLabel(question))}</span><span class="activity-chip reason-chip">${escapeHtml(item.retry ? "Quick retry" : (SPACED_REASON_LABELS[item.reason] || "Personalised review"))}</span>`;
   elements.spacedQuestionPrompt.textContent = question.prompt;
   elements.spacedQuestionOptions.innerHTML = question.options.map((option, index) => `<label class="option-label"><input type="radio" name="spaced-answer" value="${index}"> <span>${escapeHtml(option)}</span></label>`).join("");
   if (question.codeSnippet) {
@@ -2703,11 +2891,16 @@ async function submitSpacedAnswer() {
     else {
       spacedSession.mainAnswered += 1;
       if (correct) spacedSession.mainCorrect += 1;
+      const areaId = spacedQuestionAreaId(item.question);
+      const row = spacedSession.areaResults[areaId] || { questions: 0, correct: 0 };
+      row.questions += 1;
+      if (correct) row.correct += 1;
+      spacedSession.areaResults[areaId] = row;
     }
     if (!correct && !item.retry && !spacedSession.retryQuestionIds.has(item.question.id)) {
       spacedSession.retryQuestionIds.add(item.question.id);
       const insertAt = Math.min(spacedSession.queue.length, spacedSession.index + 4);
-      spacedSession.queue.splice(insertAt, 0, { question: item.question, retry: true, answered: false });
+      spacedSession.queue.splice(insertAt, 0, { question: item.question, reason: "due_review", retry: true, answered: false });
     }
     elements.spacedQuestionFeedback.innerHTML = correct
       ? `<strong>Correct.</strong> ${escapeHtml(item.question.explanation)}`
@@ -2737,6 +2930,7 @@ async function finishSpacedSession() {
       correct: spacedSession.mainCorrect,
       retryQuestions: spacedSession.retryAnswered,
       percentage,
+      areaResults: spacedSession.areaResults,
       completedAt: serverTimestamp()
     });
   } catch (error) {
@@ -2747,6 +2941,7 @@ async function finishSpacedSession() {
   elements.spacedSessionProgress.textContent = `${spacedSession.mainCorrect}/${spacedSession.mainTarget}`;
   elements.spacedSummaryPanel.innerHTML = `
     <div class="spaced-result-hero"><span class="spaced-result-score">${percentage}%</span><div><h3>Spaced practice complete</h3><p>${spacedSession.mainCorrect}/${spacedSession.mainTarget} main questions correct${spacedSession.retryAnswered ? ` · ${spacedSession.retryAnswered} quick retr${spacedSession.retryAnswered === 1 ? "y" : "ies"}` : ""}</p></div></div>
+    <div class="area-result-grid">${Object.entries(spacedSession.areaResults).map(([areaId, row]) => { const area = areaById(areaId); return `<div class="area-result-card"><span class="area-badge area-${escapeHtml(area.id)}">${escapeHtml(area.shortTitle)}</span><strong>${row.correct}/${row.questions}</strong><span>correct</span></div>`; }).join("")}</div>
     <div class="spaced-summary-grid">
       <section><h4>Secure or strengthening</h4>${secure.length ? `<ul>${secure.map(item => `<li>${escapeHtml(SKILL_LABELS[item.skillId] || item.skillId)}</li>`).join("")}</ul>` : "<p>Keep reviewing to build secure long-term recall.</p>"}</section>
       <section><h4>Review soon</h4>${reviewSoon.length ? `<ul>${reviewSoon.map(item => `<li>${escapeHtml(SKILL_LABELS[item.skillId] || item.skillId)}</li>`).join("")}</ul>` : "<p>No urgent reviews are due.</p>"}</section>
@@ -2769,13 +2964,14 @@ function startSpacedSession() {
     return;
   }
   spacedSession = {
-    queue: selected.map(question => ({ question, retry: false, answered: false })),
+    queue: selected.map(item => ({ question: item.question, reason: item.reason, retry: false, answered: false })),
     index: 0,
     mainTarget: selected.length,
     mainAnswered: 0,
     mainCorrect: 0,
     retryAnswered: 0,
-    retryQuestionIds: new Set()
+    retryQuestionIds: new Set(),
+    areaResults: {}
   };
   elements.spacedIntroPanel.classList.add("hidden");
   elements.spacedSummaryPanel.classList.add("hidden");
@@ -2786,6 +2982,13 @@ function startSpacedSession() {
 async function loadPupilDashboard() {
   await loadPupilCustomActivities();
   await loadPupilProgress();
+  try {
+    const classSnapshot = await getDoc(doc(db, "classes", currentProfile.classId));
+    currentClassSettings = classSnapshot.exists() ? { id: classSnapshot.id, ...classSnapshot.data() } : {};
+  } catch (error) {
+    console.warn("Class review focus could not be loaded:", error);
+    currentClassSettings = {};
+  }
   await loadSpacedLearningData();
   currentTask = null;
   currentActivity = null;
@@ -2810,6 +3013,7 @@ async function loadPupilDashboard() {
   ].join("");
 
   renderSpacedPracticeCard();
+  await loadOrClaimPeerReview();
   renderAreaCards();
   elements.pathwayPanel.classList.remove("hidden");
   renderPathway();
@@ -2996,6 +3200,196 @@ function scheduleOfficialResponseAutoSave(activity) {
   }, 5000);
 }
 
+function peerReviewDocRef(reviewId) {
+  return doc(db, "classes", currentProfile.classId, "peerReviews", reviewId);
+}
+
+function peerReviewCollection() {
+  return collection(db, "classes", currentProfile.classId, "peerReviews");
+}
+
+function peerTokens(text) {
+  return String(text || "").replaceAll("**", "").match(/\s+|[\p{L}\p{N}_']+|[^\s]/gu) || [];
+}
+
+function peerTokenMarkup(text, selectedIndexes = [], mode = "green") {
+  const selected = new Set((selectedIndexes || []).map(Number));
+  return peerTokens(text).map((token, index) => {
+    if (/^\s+$/.test(token)) return escapeHtml(token);
+    const chosen = selected.has(index) ? ` selected ${mode}` : "";
+    return `<button type="button" class="highlight-token${chosen}" data-token-index="${index}">${escapeHtml(token)}</button>`;
+  }).join("");
+}
+
+function highlightedPeerText(text, selectedIndexes = [], mode = "green") {
+  const selected = new Set((selectedIndexes || []).map(Number));
+  return peerTokens(text).map((token, index) => {
+    if (/^\s+$/.test(token)) return escapeHtml(token);
+    return selected.has(index) ? `<mark class="peer-mark-${mode}">${escapeHtml(token)}</mark>` : escapeHtml(token);
+  }).join("");
+}
+
+async function requestAnonymousPeerReview(activity, selfMark, reflection) {
+  const progress = currentProgress.get(activity.id) || {};
+  if (progress.peerReviewId) return progress.peerReviewId;
+  const response = (progress.originalSubmission || progress.writtenResponse || activeOfficialResponseInput?.value || "").trim();
+  if (!response) throw new Error("Submit an answer before requesting peer marking.");
+  const reviewRef = doc(peerReviewCollection());
+  const data = {
+    classId: currentProfile.classId,
+    authorId: auth.currentUser.uid,
+    activityId: activity.id,
+    activityTitle: activity.title,
+    questionReference: activity.questionReference || "",
+    areaId: activity.areaId || "sdd",
+    answerText: response,
+    modelAnswer: activity.modelAnswer || "",
+    markingPoints: activity.markingPoints || [],
+    maxMarks: Math.max(1, Number(activity.marks || 1)),
+    selfAssessedMark: Number(selfMark || 0),
+    reflection: reflection || "",
+    reviewerId: "",
+    status: "queued",
+    createdAt: serverTimestamp()
+  };
+  await setDoc(reviewRef, data);
+  await saveGenericProgress(activity, {
+    peerReviewId: reviewRef.id,
+    peerReviewStatus: "queued",
+    selfAssessedMark: Number(selfMark || 0),
+    reflection: reflection || "",
+    selfReviewCompleted: true
+  });
+  return reviewRef.id;
+}
+
+async function loadOwnPeerReview(activity, progress) {
+  if (!progress?.peerReviewId) return null;
+  try {
+    const snapshot = await getDoc(peerReviewDocRef(progress.peerReviewId));
+    return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+  } catch (error) {
+    console.warn("Peer review could not be loaded:", error);
+    return null;
+  }
+}
+
+async function finalisePeerReview(activity, review, finalMark, decision) {
+  await setDoc(peerReviewDocRef(review.id), {
+    status: "finalised",
+    finalMark: Number(finalMark),
+    authorDecision: decision,
+    finalisedAt: serverTimestamp()
+  }, { merge: true });
+  await saveGenericProgress(activity, {
+    completed: true,
+    peerReviewStatus: "finalised",
+    peerSuggestedMark: Number(review.peerSuggestedMark || 0),
+    finalSelfMark: Number(finalMark),
+    peerDecision: decision,
+    peerReviewCompletedAt: serverTimestamp()
+  }, { correct: true });
+}
+
+async function renderOwnPeerReviewPanel(activity, progress, container) {
+  if (!container) return;
+  const review = await loadOwnPeerReview(activity, progress);
+  if (!review) {
+    container.innerHTML = "";
+    return;
+  }
+  if (["queued", "assigned"].includes(review.status)) {
+    container.innerHTML = `<div class="peer-status-panel"><strong>Anonymous peer check requested</strong><p>${review.status === "assigned" ? "A classmate is checking your answer now." : "Waiting for an eligible classmate who has already attempted this question."}</p></div>`;
+    return;
+  }
+  container.innerHTML = `<section class="peer-result-panel">
+    <p class="eyebrow">Anonymous peer check</p>
+    <h4>Peer suggested mark: ${Number(review.peerSuggestedMark || 0)}/${Number(review.maxMarks || 1)}</h4>
+    <div class="peer-review-grid">
+      <div><h5>Evidence awarded in your answer</h5><div class="response-text">${highlightedPeerText(review.answerText, review.greenTokenIndexes, "green")}</div></div>
+      <div><h5>Model content your peer thought was missing</h5><div class="response-text">${highlightedPeerText(review.modelAnswer, review.redTokenIndexes, "red")}</div></div>
+    </div>
+    ${(review.missedPointIndexes || []).length ? `<h5>Marking points flagged as missing</h5><ul>${review.missedPointIndexes.map(index => `<li>${escapeHtml((review.markingPoints || [])[index] || "Marking point")}</li>`).join("")}</ul>` : ""}
+    ${review.status === "finalised" ? `<p><strong>Final self-reviewed mark:</strong> ${Number(review.finalMark || 0)}/${Number(review.maxMarks || 1)}</p>` : `<div class="activity-actions"><button id="acceptPeerMarkButton" type="button">Accept peer mark</button><button id="reviewFinalMarkButton" type="button" class="secondary">Review my final mark</button></div><div id="finalMarkChooser" class="hidden"></div>`}
+  </section>`;
+  if (review.status === "finalised") return;
+  container.querySelector("#acceptPeerMarkButton").addEventListener("click", async () => {
+    await finalisePeerReview(activity, review, review.peerSuggestedMark, "accepted");
+    setGenericFeedback("Peer mark accepted and your final self-review has been saved.", "success");
+    setGenericStatus(activity);
+    await renderOwnPeerReviewPanel(activity, currentProgress.get(activity.id), container);
+  });
+  container.querySelector("#reviewFinalMarkButton").addEventListener("click", () => {
+    const chooser = container.querySelector("#finalMarkChooser");
+    chooser.classList.remove("hidden");
+    chooser.innerHTML = `<label>My final mark <select id="finalPeerMarkInput">${Array.from({ length: Number(review.maxMarks || 1) + 1 }, (_, value) => `<option value="${value}" ${value === Number(review.peerSuggestedMark || 0) ? "selected" : ""}>${value}/${review.maxMarks}</option>`).join("")}</select></label><button id="saveFinalPeerMarkButton" type="button">Save final mark</button>`;
+    chooser.querySelector("#saveFinalPeerMarkButton").addEventListener("click", async () => {
+      const finalMark = Number(chooser.querySelector("#finalPeerMarkInput").value);
+      await finalisePeerReview(activity, review, finalMark, "reviewed");
+      setGenericFeedback("Your final mark has been saved after reviewing the peer check.", "success");
+      setGenericStatus(activity);
+      await renderOwnPeerReviewPanel(activity, currentProgress.get(activity.id), container);
+    });
+  });
+}
+
+async function loadOrClaimPeerReview() {
+  activePeerReview = null;
+  elements.peerMarkingCard.classList.add("hidden");
+  if (!auth.currentUser || currentProfile?.role !== "student") return;
+  try {
+    const assigned = await getDocs(query(peerReviewCollection(), where("reviewerId", "==", auth.currentUser.uid)));
+    const existing = assigned.docs.map(item => ({ id: item.id, ...item.data() })).find(item => item.status === "assigned");
+    if (existing) activePeerReview = existing;
+    if (!activePeerReview) {
+      const attemptedActivityIds = [...currentProgress.entries()].filter(([, progress]) => progress.submitted === true).map(([id]) => id);
+      for (const activityId of attemptedActivityIds) {
+        const queued = await getDocs(query(peerReviewCollection(), where("status", "==", "queued"), where("activityId", "==", activityId)));
+        const candidateDoc = queued.docs.find(item => item.data().authorId !== auth.currentUser.uid);
+        if (!candidateDoc) continue;
+        const claimed = await runTransaction(db, async transaction => {
+          const fresh = await transaction.get(candidateDoc.ref);
+          if (!fresh.exists() || fresh.data().status !== "queued" || fresh.data().authorId === auth.currentUser.uid) return null;
+          transaction.update(candidateDoc.ref, { reviewerId: auth.currentUser.uid, status: "assigned", assignedAt: serverTimestamp() });
+          return { id: candidateDoc.id, ...fresh.data(), reviewerId: auth.currentUser.uid, status: "assigned" };
+        });
+        if (claimed) { activePeerReview = claimed; break; }
+      }
+    }
+    if (activePeerReview) {
+      elements.peerMarkingDescription.textContent = `${activePeerReview.activityTitle || "Official-paper answer"} · ${activePeerReview.maxMarks || 1} mark${Number(activePeerReview.maxMarks || 1) === 1 ? "" : "s"}`;
+      elements.peerMarkingCard.classList.remove("hidden");
+    }
+  } catch (error) {
+    console.warn("Peer review queue could not be checked:", error);
+  }
+}
+
+function renderPeerReviewWorkspace() {
+  if (!activePeerReview) return;
+  peerGreenTokens = new Set((activePeerReview.greenTokenIndexes || []).map(Number));
+  peerRedTokens = new Set((activePeerReview.redTokenIndexes || []).map(Number));
+  elements.peerReviewTitle.textContent = activePeerReview.activityTitle || "Mark a classmate's answer";
+  elements.peerReviewQuestionMeta.textContent = `${activePeerReview.questionReference || "Official-paper question"} · ${activePeerReview.maxMarks || 1} mark${Number(activePeerReview.maxMarks || 1) === 1 ? "" : "s"}`;
+  elements.peerAnswerTokens.innerHTML = peerTokenMarkup(activePeerReview.answerText, [...peerGreenTokens], "green");
+  elements.peerModelTokens.innerHTML = peerTokenMarkup(activePeerReview.modelAnswer, [...peerRedTokens], "red");
+  elements.peerMarkingPoints.innerHTML = (activePeerReview.markingPoints || []).map((point, index) => `<label class="form-check peer-point"><input type="checkbox" class="peer-missed-point" value="${index}"> <span>${escapeHtml(point)}</span></label>`).join("") || `<p>No separate marking points were supplied.</p>`;
+  elements.peerSuggestedMarkInput.innerHTML = Array.from({ length: Number(activePeerReview.maxMarks || 1) + 1 }, (_, value) => `<option value="${value}">${value}/${activePeerReview.maxMarks || 1}</option>`).join("");
+  elements.peerReviewFeedback.className = "feedback hidden";
+  const bindTokens = (container, set, mode) => {
+    container.querySelectorAll(".highlight-token").forEach(button => button.addEventListener("click", () => {
+      const index = Number(button.dataset.tokenIndex);
+      if (set.has(index)) set.delete(index); else set.add(index);
+      button.classList.toggle("selected", set.has(index));
+      button.classList.toggle(mode, set.has(index));
+    }));
+  };
+  bindTokens(elements.peerAnswerTokens, peerGreenTokens, "green");
+  bindTokens(elements.peerModelTokens, peerRedTokens, "red");
+  showView("peerReviewView");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function officialModelPanelMarkup(activity, progress = {}) {
   const marks = Math.max(1, Number(activity.marks || 1));
   const options = Array.from({ length: marks + 1 }, (_, value) =>
@@ -3016,7 +3410,12 @@ function officialModelPanelMarkup(activity, progress = {}) {
           <textarea id="officialReflectionInput" class="small-textarea" placeholder="For example: I needed to explain why the data type was suitable.">${escapeHtml(progress.reflection || "")}</textarea>
         </label>
       </div>
-      <button id="completeOfficialReviewButton" type="button">Save reflection and complete review</button>
+      <div class="activity-actions peer-choice-actions">
+        <button id="completeOfficialReviewButton" type="button" class="save-button">Save my self-review</button>
+        <button id="requestPeerReviewButton" type="button">Request anonymous peer check</button>
+        <button id="completeWithoutPeerButton" type="button" class="secondary">Complete without peer check</button>
+      </div>
+      <div id="ownPeerReviewPanel"></div>
     </div>`;
 }
 
@@ -3187,20 +3586,51 @@ function renderGenericActivity(activity) {
       modelPanel.innerHTML = officialModelPanelMarkup(activity, latest);
       const selfMarkInput = modelPanel.querySelector("#officialSelfMarkInput");
       const reflectionInput = modelPanel.querySelector("#officialReflectionInput");
+      const peerPanel = modelPanel.querySelector("#ownPeerReviewPanel");
       modelPanel.querySelector("#completeOfficialReviewButton").addEventListener("click", async () => {
         await saveGenericProgress(activity, {
-          completed: true,
           submitted: true,
           writtenResponse: activeOfficialResponseInput.value,
           selfAssessedMark: Number(selfMarkInput.value),
           reflection: reflectionInput.value,
           selfReviewCompleted: true,
           reviewedAt: serverTimestamp()
+        });
+        setGenericFeedback("Your self-review has been saved. You can now request an anonymous peer check or complete without one.", "success");
+        setGenericStatus(activity);
+      });
+      modelPanel.querySelector("#requestPeerReviewButton").addEventListener("click", async () => {
+        try {
+          const reviewId = await requestAnonymousPeerReview(activity, Number(selfMarkInput.value), reflectionInput.value);
+          setGenericFeedback("Anonymous peer check requested. It will be offered to an eligible classmate who has already attempted this question.", "success");
+          await renderOwnPeerReviewPanel(activity, currentProgress.get(activity.id), peerPanel);
+          modelPanel.querySelector("#requestPeerReviewButton").disabled = true;
+          modelPanel.querySelector("#requestPeerReviewButton").textContent = "Peer check requested";
+        } catch (error) {
+          setGenericFeedback(error.message || "The peer check could not be requested.", "error");
+        }
+      });
+      modelPanel.querySelector("#completeWithoutPeerButton").addEventListener("click", async () => {
+        await saveGenericProgress(activity, {
+          completed: true,
+          submitted: true,
+          writtenResponse: activeOfficialResponseInput.value,
+          selfAssessedMark: Number(selfMarkInput.value),
+          finalSelfMark: Number(selfMarkInput.value),
+          reflection: reflectionInput.value,
+          selfReviewCompleted: true,
+          peerDecision: "not_requested",
+          reviewedAt: serverTimestamp()
         }, { correct: true });
-        setGenericFeedback("Review complete. Your answer, estimated mark and reflection have been saved.", "success");
+        setGenericFeedback("Self-review complete without a peer check.", "success");
         setGenericStatus(activity);
         renderRelatedPractice(activity, elements.activityRelatedPractice);
       });
+      if ((currentProgress.get(activity.id) || {}).peerReviewId) {
+        modelPanel.querySelector("#requestPeerReviewButton").disabled = true;
+        modelPanel.querySelector("#requestPeerReviewButton").textContent = "Peer check requested";
+      }
+      void renderOwnPeerReviewPanel(activity, currentProgress.get(activity.id) || latest, peerPanel);
     };
 
     if (progress.modelAnswerViewed) renderModelPanel();
@@ -4216,5 +4646,42 @@ window.addEventListener("beforeunload", event => {
   }
 });
 
+
+
+
+elements.openPeerReviewButton.addEventListener("click", renderPeerReviewWorkspace);
+elements.backFromPeerReviewButton.addEventListener("click", async () => {
+  showView("pupilView");
+  await loadPupilDashboard();
+});
+elements.clearPeerHighlightsButton.addEventListener("click", () => {
+  peerGreenTokens.clear();
+  peerRedTokens.clear();
+  renderPeerReviewWorkspace();
+});
+elements.submitPeerReviewButton.addEventListener("click", async () => {
+  if (!activePeerReview) return;
+  elements.submitPeerReviewButton.disabled = true;
+  try {
+    const missedPointIndexes = [...elements.peerMarkingPoints.querySelectorAll(".peer-missed-point:checked")].map(input => Number(input.value));
+    await setDoc(peerReviewDocRef(activePeerReview.id), {
+      status: "completed",
+      peerSuggestedMark: Number(elements.peerSuggestedMarkInput.value || 0),
+      greenTokenIndexes: [...peerGreenTokens].sort((a, b) => a - b),
+      redTokenIndexes: [...peerRedTokens].sort((a, b) => a - b),
+      missedPointIndexes,
+      completedAt: serverTimestamp()
+    }, { merge: true });
+    elements.peerReviewFeedback.textContent = "Anonymous peer check submitted. No written comment or identity was shared.";
+    elements.peerReviewFeedback.className = "feedback success";
+    activePeerReview = null;
+    setTimeout(async () => { showView("pupilView"); await loadPupilDashboard(); }, 900);
+  } catch (error) {
+    console.error(error);
+    elements.submitPeerReviewButton.disabled = false;
+    elements.peerReviewFeedback.textContent = error.message || "The peer check could not be submitted.";
+    elements.peerReviewFeedback.className = "feedback error";
+  }
+});
 
 window.PYTHON_PRACTICE_READY = true;

@@ -186,6 +186,25 @@
           <button id="closeClassDetailButton" class="secondary">Close</button>
         </div>
         <div id="classStats" class="stats-grid compact"></div>
+        <section class="class-focus-panel">
+          <div>
+            <h4>Spaced-learning focus</h4>
+            <p class="help-text">Sessions mainly use the current course area, then interleave earlier learning from every area pupils have studied.</p>
+          </div>
+          <label>Current course area
+            <select id="classFocusAreaInput">
+              <option value="auto">Automatic — use each pupil's current work</option>
+              <option value="sdd">SDD — Software Design and Development</option>
+              <option value="ddd">DDD — Database Design and Development</option>
+              <option value="cs">CS — Computer Systems</option>
+            </select>
+          </label>
+          <label>Current unit
+            <select id="classFocusUnitInput"><option value="">Automatic / whole area</option></select>
+          </label>
+          <button id="saveClassFocusButton" type="button">Save focus</button>
+          <span id="classFocusSaveStatus" class="help-text"></span>
+        </section>
         <div class="table-wrap">
           <table>
             <thead>
@@ -211,6 +230,7 @@
           <span id="spacedReviewCount" class="activity-chip">0 reviews</span>
         </div>
         <div id="spacedClassStats" class="stats-grid compact"></div>
+        <div id="spacedAreaStats" class="area-recall-grid"></div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -243,6 +263,20 @@
           </table>
         </div>
         <div id="paperResponseViewer" class="paper-response-viewer hidden"></div>
+
+        <div class="subsection-heading">
+          <div>
+            <h4>Peer marking overview</h4>
+            <p class="help-text">Pupils are anonymous to one another. Teachers can moderate self, peer and final marks.</p>
+          </div>
+          <span id="peerReviewCount" class="activity-chip">0 reviews</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pupil</th><th>Activity</th><th>Self</th><th>Peer</th><th>Final</th><th>Status</th><th>Reviewer</th></tr></thead>
+            <tbody id="peerReviewBody"></tbody>
+          </table>
+        </div>
       </section>
     </section>
 
@@ -261,9 +295,19 @@
           <p class="eyebrow">Personalised retrieval</p>
           <h3>My spaced practice</h3>
           <p id="spacedPracticeDescription">Answer a short mixed test chosen from skills you have already learned.</p>
+          <p id="spacedCountdownText" class="spaced-countdown" aria-live="polite"></p>
           <div id="spacedPracticeMeta" class="activity-meta"></div>
         </div>
         <button id="startSpacedPracticeButton" type="button">Start my spaced practice</button>
+      </section>
+
+      <section id="peerMarkingCard" class="card peer-marking-card hidden">
+        <div>
+          <p class="eyebrow">Anonymous peer marking</p>
+          <h3>A peer answer is ready to check</h3>
+          <p id="peerMarkingDescription">Use the teacher marking points. Highlight evidence in green and missing content in red.</p>
+        </div>
+        <button id="openPeerReviewButton" type="button">Open peer check</button>
       </section>
       <section id="areaCards" class="area-grid"></section>
 
@@ -303,6 +347,7 @@
         </div>
 
         <div id="spacedQuestionPanel" class="hidden">
+          <div id="spacedQuestionMeta" class="spaced-question-meta"></div>
           <div id="spacedQuestionCode" class="hidden"></div>
           <fieldset class="question-block">
             <legend id="spacedQuestionPrompt"></legend>
@@ -323,6 +368,46 @@
         </div>
 
         <div id="spacedSummaryPanel" class="hidden"></div>
+      </section>
+    </section>
+
+
+    <section id="peerReviewView" class="hidden">
+      <button id="backFromPeerReviewButton" class="secondary">← Back to dashboard</button>
+      <section class="card peer-review-workspace">
+        <div class="challenge-heading">
+          <div>
+            <p class="eyebrow">Anonymous peer check</p>
+            <h2 id="peerReviewTitle">Mark a classmate's response</h2>
+            <p id="peerReviewQuestionMeta" class="help-text"></p>
+          </div>
+          <span class="status-pill working">Same class</span>
+        </div>
+        <div class="peer-instructions">
+          <p><strong>No written feedback is needed.</strong> Click words in the pupil answer to highlight evidence in green. Click words in the teacher model answer to highlight important content that is missing in red.</p>
+        </div>
+        <div class="peer-review-grid">
+          <section>
+            <h3>Pupil answer — mark evidence in green</h3>
+            <div id="peerAnswerTokens" class="token-highlight-box"></div>
+          </section>
+          <section>
+            <h3>Teacher model answer — mark missing content in red</h3>
+            <div id="peerModelTokens" class="token-highlight-box"></div>
+          </section>
+        </div>
+        <section>
+          <h3>Marking points</h3>
+          <div id="peerMarkingPoints"></div>
+        </section>
+        <div class="peer-mark-controls">
+          <label>Suggested mark
+            <select id="peerSuggestedMarkInput"></select>
+          </label>
+          <button id="clearPeerHighlightsButton" type="button" class="secondary">Clear highlights</button>
+          <button id="submitPeerReviewButton" type="button">Submit anonymous peer check</button>
+        </div>
+        <div id="peerReviewFeedback" class="feedback hidden" aria-live="polite"></div>
       </section>
     </section>
 
@@ -443,7 +528,7 @@
   </main>
 
   <footer>
-    <p>Python Practice prototype v4.2 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v4.3 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -460,6 +545,6 @@
     }, 4000);
   </script>
 
-  <script type="module" src="app.js?v=4.2"></script>
+  <script type="module" src="app.js?v=4.3"></script>
 </body>
 </html>
