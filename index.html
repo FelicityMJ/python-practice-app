@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Python practice with classes, saved progress and code visualisation">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=4.3.3">
+  <link rel="stylesheet" href="styles.css?v=4.4">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
@@ -202,9 +202,36 @@
           <label>Current unit
             <select id="classFocusUnitInput"><option value="">Automatic / whole area</option></select>
           </label>
+          <label>Expected progress
+            <input id="classExpectedCompletedInput" type="number" min="0" step="1" value="0">
+            <span class="help-text">Required activities pupils should have completed by now. Use 0 to turn pace flags off.</span>
+          </label>
           <button id="saveClassFocusButton" type="button">Save focus</button>
           <span id="classFocusSaveStatus" class="help-text"></span>
         </section>
+        <div class="subsection-heading teacher-insights-heading">
+          <div>
+            <h4>Class progress by unit</h4>
+            <p class="help-text">Completed, developing and not-started work across the required pathway.</p>
+          </div>
+        </div>
+        <div id="classUnitProgressChart" class="unit-progress-chart"></div>
+
+        <div class="subsection-heading teacher-insights-heading">
+          <div>
+            <h4>Pupils needing attention</h4>
+            <p class="help-text">Explainable signals for support, pace, retention and extension. These are prompts for teacher judgement, not permanent labels.</p>
+          </div>
+          <span id="teacherAttentionCount" class="activity-chip">0 signals</span>
+        </div>
+        <div id="teacherAttentionList" class="attention-list"></div>
+
+        <div class="subsection-heading teacher-insights-heading">
+          <div>
+            <h4>Pupil overview</h4>
+            <p class="help-text">Open a pupil profile for unit progress, recent activity, retrieval history and skill evidence.</p>
+          </div>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -215,12 +242,47 @@
                 <th>Attempts</th>
                 <th>First-time success</th>
                 <th>Last active</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="pupilStatsBody"></tbody>
           </table>
         </div>
 
+        <div id="pupilInsightPanel" class="pupil-insight-panel hidden"></div>
+
+        <div class="subsection-heading teacher-insights-heading">
+          <div>
+            <h4>Skill mastery heatmap</h4>
+            <p class="help-text">Green is secure, orange is developing, red needs support and grey means no or limited evidence.</p>
+          </div>
+          <div class="heatmap-controls">
+            <label>Skills
+              <select id="heatmapScopeInput">
+                <option value="focus">Current focus</option>
+                <option value="studied">All studied skills</option>
+                <option value="sdd">SDD</option>
+                <option value="ddd">DDD</option>
+                <option value="cs">CS</option>
+              </select>
+            </label>
+            <label>Pupils
+              <select id="heatmapPupilFilterInput">
+                <option value="all">All pupils</option>
+                <option value="attention">Red or orange only</option>
+                <option value="support">Red only</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="heatmap-legend" aria-label="Mastery heatmap legend">
+          <span><i class="mastery-key mastery-green">✓</i> Secure</span>
+          <span><i class="mastery-key mastery-orange">~</i> Developing</span>
+          <span><i class="mastery-key mastery-red">!</i> Needs support</span>
+          <span><i class="mastery-key mastery-grey">—</i> No or limited evidence</span>
+        </div>
+        <div id="masteryHeatmapContainer" class="mastery-heatmap-wrap"></div>
+        <div id="skillInsightViewer" class="skill-insight-viewer hidden"></div>
 
         <div class="subsection-heading">
           <div>
@@ -528,7 +590,7 @@
   </main>
 
   <footer>
-    <p>Python Practice prototype v4.3.3 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v4.4 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -565,7 +627,7 @@
   </script>
 
   <script type="module">
-    import("./app-v4-3-3.js")
+    import("./app-v4-4.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -573,7 +635,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v4-3-3.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v4-4.js again."
           );
         }
       })
@@ -583,7 +645,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v4-3-3.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v4-4.js again and make sure both filenames are exact."
         );
       });
   </script>
