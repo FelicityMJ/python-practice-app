@@ -513,7 +513,7 @@ const firebaseConfig = {
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
 
-const APP_VERSION = "4.1.2";
+const APP_VERSION = "4.1.3";
 console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -545,6 +545,7 @@ let tracePlayTimer = null;
 let autoSaveTimer = null;
 let codeIsDirty = false;
 let saveInProgress = false;
+let visualiserCompletionSaving = false;
 
 const LEGACY_ACTIVITY_MAP = {
   "variables-01": "SDD-PY-02-05",
@@ -1782,6 +1783,7 @@ function openTask(task) {
   currentTask = task;
   currentActivity = task;
   currentHintIndex = 0;
+  visualiserCompletionSaving = false;
   clearScheduledAutoSave();
   const progress = currentProgress.get(task.id);
   const status = activityStatus(task);
@@ -2521,6 +2523,65 @@ function stopTracePlayback() {
   if (elements.playTraceButton) elements.playTraceButton.textContent = "Play";
 }
 
+async function completeVisualiserActivityAtFinish() {
+  if (
+    visualiserCompletionSaving
+    || !currentTask
+    || currentTask.type !== "visualiser"
+    || !auth.currentUser
+    || currentProfile?.role !== "student"
+  ) {
+    return;
+  }
+
+  const finalStep = traceSteps[traceSteps.length - 1];
+  if (
+    !finalStep
+    || traceIndex !== traceSteps.length - 1
+    || finalStep.event !== "done"
+  ) {
+    return;
+  }
+
+  const old = currentProgress.get(currentTask.id) || {};
+  if (old.completed) return;
+
+  visualiserCompletionSaving = true;
+
+  try {
+    const progressRef = doc(db, "progress", progressDocumentId(currentTask.id));
+    const data = {
+      ...baseProgressData(currentTask, old),
+      completed: true,
+      status: "complete",
+      lastCode: elements.codeEditor.value,
+      completedAt: serverTimestamp(),
+      lastSavedAt: serverTimestamp(),
+      lastActivityAt: serverTimestamp()
+    };
+
+    await setDoc(
+      progressRef,
+      data,
+      { merge: currentProgress.has(currentTask.id) }
+    );
+
+    currentProgress.set(currentTask.id, { ...old, ...data });
+    elements.challengeStatus.textContent = "Complete";
+    elements.challengeStatus.className = "status-pill complete";
+    elements.feedbackBox.textContent =
+      "Visualiser activity complete. The next activity is now unlocked.";
+    elements.feedbackBox.className = "feedback success";
+  } catch (error) {
+    console.error("Could not complete visualiser activity:", error);
+    elements.feedbackBox.textContent =
+      "The visualiser finished, but completion could not be saved. Please try the final step again.";
+    elements.feedbackBox.className = "feedback error";
+  } finally {
+    visualiserCompletionSaving = false;
+  }
+}
+
 function renderTraceStep(index) {
   if (!traceSteps.length || !currentTask) return;
   traceIndex = Math.max(0, Math.min(index, traceSteps.length - 1));
@@ -2557,6 +2618,14 @@ function renderTraceStep(index) {
   elements.previousStepButton.disabled = traceIndex === 0;
   elements.nextStepButton.disabled = traceIndex === traceSteps.length - 1;
   elements.lastStepButton.disabled = traceIndex === traceSteps.length - 1;
+
+  if (
+    currentTask.type === "visualiser"
+    && step.event === "done"
+    && traceIndex === traceSteps.length - 1
+  ) {
+    void completeVisualiserActivityAtFinish();
+  }
 }
 
 async function recordVisualiserUse() {
