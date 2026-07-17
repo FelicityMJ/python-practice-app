@@ -22,7 +22,7 @@ import {
   writeBatch,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-import { TASKS } from "./tasks.js?v=3.1";
+import { TASKS } from "./tasks.js?v=4.0";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNCOKfjQf6FHQQj3squE6NZtZYdyuwsLw",
@@ -33,7 +33,7 @@ const firebaseConfig = {
   appId: "1:680319448297:web:619e79bbbea37764832c78"
 };
 
-const APP_VERSION = "3.1";
+const APP_VERSION = "4.0";
 console.info(`Python Practice v${APP_VERSION}`);
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -53,6 +53,13 @@ let currentHintIndex = 0;
 let pyodide = null;
 let pyodidePromise = null;
 let accountSetupInProgress = false;
+let errorViewMode = "standard";
+let traceSteps = [];
+let traceIndex = 0;
+let tracePlayTimer = null;
+let autoSaveTimer = null;
+let codeIsDirty = false;
+let saveInProgress = false;
 
 function showMessage(text, type = "info") {
   elements.messageBox.textContent = text;
@@ -146,6 +153,7 @@ async function routeSignedInUser(user) {
       showView("teacherView");
       await loadTeacherDashboard();
     } else if (currentProfile.role === "student") {
+      await loadUserPreferences();
       showView("pupilView");
       await loadPupilDashboard();
     } else {
@@ -166,6 +174,9 @@ onAuthStateChanged(auth, async user => {
     currentProfile = null;
     currentTask = null;
     currentProgress = new Map();
+    stopTracePlayback();
+    clearScheduledAutoSave();
+    errorViewMode = "standard";
     elements.signedInControls.classList.add("hidden");
     showView("authView");
   }
@@ -292,7 +303,12 @@ elements.pupilRegisterForm.addEventListener("submit", async event => {
   }
 });
 
-elements.logoutButton.addEventListener("click", () => signOut(auth));
+elements.logoutButton.addEventListener("click", async () => {
+  if (currentProfile?.role === "student" && currentTask && codeIsDirty) {
+    try { await saveProgressDraft({ silent: true }); } catch (_) { /* sign out anyway */ }
+  }
+  await signOut(auth);
+});
 
 elements.homeButton.addEventListener("click", async () => {
   clearMessage();
@@ -300,6 +316,10 @@ elements.homeButton.addEventListener("click", async () => {
     showView("teacherView");
     await loadTeacherDashboard();
   } else if (currentProfile?.role === "student") {
+    if (currentTask && codeIsDirty) {
+      try { await saveProgressDraft({ silent: true }); } catch (_) { /* keep navigating */ }
+    }
+    stopTracePlayback();
     showView("pupilView");
     await loadPupilDashboard();
   }
@@ -430,17 +450,25 @@ async function loadTeacherDashboard() {
   }
 }
 
+
+function progressStatus(progress) {
+  if (progress?.completed) return { label: "Complete", className: "complete" };
+  if ((progress?.attempts || 0) > 0) return { label: "Needs work", className: "needs-work" };
+  if (progress?.lastCode !== undefined) return { label: "In progress", className: "working" };
+  return { label: "Not started", className: "" };
+}
+
 function showClassDetails(classItem) {
   elements.classDetailTitle.textContent = classItem.name;
   elements.classDetailMeta.textContent = `Class code: ${classItem.joinCode}`;
 
   const completedCount = classItem.progress.filter(item => item.completed).length;
+  const activeCount = classItem.progress.filter(item => !item.completed).length;
   const attempts = classItem.progress.reduce((sum, item) => sum + (item.attempts || 0), 0);
-  const firstTime = classItem.progress.filter(item => item.firstAttemptCorrect === true).length;
   elements.classStats.innerHTML = [
     statCard(classItem.members.length, "Pupils"),
     statCard(completedCount, "Tasks completed"),
-    statCard(attempts, "Attempts")
+    statCard(activeCount, "Tasks in progress")
   ].join("");
 
   elements.pupilStatsBody.innerHTML = "";
@@ -449,18 +477,20 @@ function showClassDetails(classItem) {
     .forEach(member => {
       const pupilProgress = classItem.progress.filter(item => item.userId === member.userId);
       const pupilCompleted = pupilProgress.filter(item => item.completed).length;
+      const pupilInProgress = pupilProgress.filter(item => !item.completed).length;
       const pupilAttempts = pupilProgress.reduce((sum, item) => sum + (item.attempts || 0), 0);
       const pupilFirstTime = pupilProgress.filter(item => item.firstAttemptCorrect === true).length;
       const firstTimeRate = pupilCompleted ? Math.round((pupilFirstTime / pupilCompleted) * 100) : 0;
       const last = pupilProgress
-        .map(item => item.lastAttemptAt)
+        .map(item => item.lastActivityAt || item.lastAttemptAt || item.lastSavedAt)
         .filter(Boolean)
-        .sort((a, b) => b.seconds - a.seconds)[0];
+        .sort((a, b) => (b.seconds || 0) - (a.seconds || 0))[0];
 
       const row = document.createElement("tr");
       row.innerHTML = `
         <td><strong>${escapeHtml(member.displayName)}</strong><br><span class="help-text">${escapeHtml(member.username)}</span></td>
         <td>${pupilCompleted}/${TASKS.length}</td>
+        <td>${pupilInProgress}</td>
         <td>${pupilAttempts}</td>
         <td>${firstTimeRate}%</td>
         <td>${humanDate(last)}</td>`;
@@ -468,7 +498,7 @@ function showClassDetails(classItem) {
     });
 
   if (!classItem.members.length) {
-    elements.pupilStatsBody.innerHTML = `<tr><td colspan="5">No pupils have joined yet.</td></tr>`;
+    elements.pupilStatsBody.innerHTML = `<tr><td colspan="6">No pupils have joined yet.</td></tr>`;
   }
 
   elements.classDetailPanel.classList.remove("hidden");
@@ -478,6 +508,53 @@ function showClassDetails(classItem) {
 elements.closeClassDetailButton.addEventListener("click", () => {
   elements.classDetailPanel.classList.add("hidden");
 });
+
+async function loadUserPreferences() {
+  if (!auth.currentUser || currentProfile?.role !== "student") return;
+  try {
+    const snapshot = await getDoc(doc(db, "preferences", auth.currentUser.uid));
+    if (snapshot.exists() && ["standard", "friendly"].includes(snapshot.data().errorMode)) {
+      errorViewMode = snapshot.data().errorMode;
+    } else {
+      errorViewMode = "standard";
+    }
+  } catch (error) {
+    console.warn("Preference could not be loaded:", error);
+    errorViewMode = "standard";
+  }
+  applyErrorViewMode();
+}
+
+async function saveErrorPreference() {
+  if (!auth.currentUser || currentProfile?.role !== "student") return;
+  await setDoc(doc(db, "preferences", auth.currentUser.uid), {
+    userId: auth.currentUser.uid,
+    errorMode: errorViewMode,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
+function applyErrorViewMode() {
+  const standard = errorViewMode === "standard";
+  elements.standardErrorTab.classList.toggle("active", standard);
+  elements.friendlyErrorTab.classList.toggle("active", !standard);
+  elements.standardErrorBox.classList.toggle("hidden", !standard);
+  elements.friendlyErrorBox.classList.toggle("hidden", standard);
+}
+
+async function setErrorViewMode(mode) {
+  if (!["standard", "friendly"].includes(mode)) return;
+  errorViewMode = mode;
+  applyErrorViewMode();
+  try {
+    await saveErrorPreference();
+  } catch (error) {
+    console.warn("Preference could not be saved:", error);
+  }
+}
+
+elements.standardErrorTab.addEventListener("click", () => setErrorViewMode("standard"));
+elements.friendlyErrorTab.addEventListener("click", () => setErrorViewMode("friendly"));
 
 async function loadPupilProgress() {
   const snapshot = await getDocs(query(
@@ -494,55 +571,79 @@ async function loadPupilProgress() {
 
 async function loadPupilDashboard() {
   await loadPupilProgress();
+  currentTask = null;
+  clearScheduledAutoSave();
+  stopTracePlayback();
   elements.pupilWelcome.textContent = `Hello, ${currentProfile.displayName}`;
   elements.pupilClassLabel.textContent = currentProfile.className;
 
   const completed = [...currentProgress.values()].filter(item => item.completed).length;
+  const inProgress = [...currentProgress.values()].filter(item => !item.completed).length;
   const attempts = [...currentProgress.values()].reduce((sum, item) => sum + (item.attempts || 0), 0);
   const percent = Math.round((completed / TASKS.length) * 100);
   elements.pupilProgressBadge.textContent = `${completed}/${TASKS.length} complete`;
   elements.topicSummary.innerHTML = [
     statCard(`${percent}%`, "Overall progress"),
     statCard(completed, "Completed"),
-    statCard(attempts, "Attempts"),
-    statCard(TASKS.length - completed, "Remaining")
+    statCard(inProgress, "In progress"),
+    statCard(attempts, "Attempts")
   ].join("");
 
   elements.taskList.innerHTML = "";
   TASKS.forEach(task => {
     const progress = currentProgress.get(task.id);
+    const status = progressStatus(progress);
     const card = document.createElement("article");
     card.className = "task-card";
-    const status = progress?.completed ? "Complete" : progress ? "In progress" : "Not started";
+    const attemptsText = progress && (progress.attempts || 0) > 0
+      ? ` · ${progress.attempts} attempt${progress.attempts === 1 ? "" : "s"}`
+      : "";
     card.innerHTML = `
       <p class="eyebrow">${escapeHtml(task.topic)}</p>
       <h3>${escapeHtml(task.title)}</h3>
-      <p>${status}${progress ? ` · ${progress.attempts || 0} attempt${progress.attempts === 1 ? "" : "s"}` : ""}</p>
-      <div class="card-actions"><button>${progress?.completed ? "Practise again" : "Open task"}</button></div>`;
+      <p>${status.label}${attemptsText}</p>
+      <div class="card-actions"><button>${progress?.completed ? "Practise again" : progress ? "Continue task" : "Open task"}</button></div>`;
     card.querySelector("button").addEventListener("click", () => openTask(task));
     elements.taskList.appendChild(card);
   });
 }
 
+function clearTaskPanels() {
+  elements.outputBox.textContent = "Press Run to test your program.";
+  elements.feedbackBox.className = "feedback hidden";
+  elements.feedbackBox.textContent = "";
+  hideExecutionError();
+  elements.visualiserPanel.classList.add("hidden");
+  traceSteps = [];
+  traceIndex = 0;
+  stopTracePlayback();
+}
+
 function openTask(task) {
   currentTask = task;
   currentHintIndex = 0;
+  clearScheduledAutoSave();
   const progress = currentProgress.get(task.id);
+  const status = progressStatus(progress);
   elements.challengeTopic.textContent = task.topic;
   elements.challengeTitle.textContent = task.title;
   elements.challengeInstructions.innerHTML = task.instructions;
   elements.expectedOutput.textContent = task.expectedOutput;
-  elements.codeEditor.value = progress?.lastCode || task.starterCode;
-  elements.outputBox.textContent = "Press Run to test your program.";
-  elements.feedbackBox.className = "feedback hidden";
-  elements.feedbackBox.textContent = "";
-  elements.challengeStatus.textContent = progress?.completed ? "Complete" : progress ? "In progress" : "Not started";
-  elements.challengeStatus.className = `status-pill ${progress?.completed ? "complete" : progress ? "working" : ""}`;
+  elements.codeEditor.value = progress?.lastCode ?? task.starterCode;
+  elements.challengeStatus.textContent = status.label;
+  elements.challengeStatus.className = `status-pill ${status.className}`;
+  codeIsDirty = false;
+  setSaveStatus(progress ? "saved" : "idle", progress ? "Saved progress loaded" : "No unsaved changes");
+  clearTaskPanels();
   showView("challengeView");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 elements.backToTasksButton.addEventListener("click", async () => {
+  if (currentTask && codeIsDirty) {
+    try { await saveProgressDraft({ silent: true }); } catch (_) { /* continue */ }
+  }
+  stopTracePlayback();
   showView("pupilView");
   await loadPupilDashboard();
 });
@@ -550,8 +651,8 @@ elements.backToTasksButton.addEventListener("click", async () => {
 elements.resetButton.addEventListener("click", () => {
   if (!currentTask) return;
   elements.codeEditor.value = currentTask.starterCode;
-  elements.outputBox.textContent = "Press Run to test your program.";
-  elements.feedbackBox.className = "feedback hidden";
+  clearTaskPanels();
+  markCodeDirty();
 });
 
 elements.hintButton.addEventListener("click", async () => {
@@ -559,8 +660,12 @@ elements.hintButton.addEventListener("click", async () => {
   const hint = currentTask.hints[Math.min(currentHintIndex, currentTask.hints.length - 1)];
   currentHintIndex += 1;
   elements.feedbackBox.textContent = `Hint: ${hint}`;
-  elements.feedbackBox.className = "feedback error";
-  await saveHintUse();
+  elements.feedbackBox.className = "feedback info";
+  try {
+    await saveHintUse();
+  } catch (error) {
+    console.error("Hint save failed:", error);
+  }
 });
 
 elements.codeEditor.addEventListener("keydown", event => {
@@ -570,6 +675,106 @@ elements.codeEditor.addEventListener("keydown", event => {
     const end = elements.codeEditor.selectionEnd;
     elements.codeEditor.value = elements.codeEditor.value.slice(0, start) + "    " + elements.codeEditor.value.slice(end);
     elements.codeEditor.selectionStart = elements.codeEditor.selectionEnd = start + 4;
+    markCodeDirty();
+  }
+});
+
+elements.codeEditor.addEventListener("input", markCodeDirty);
+
+function clearScheduledAutoSave() {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+}
+
+function setSaveStatus(state, text) {
+  elements.saveStatus.className = `save-status ${state === "idle" ? "" : state}`;
+  elements.saveStatus.textContent = text;
+}
+
+function markCodeDirty() {
+  if (!currentTask || currentProfile?.role !== "student") return;
+  codeIsDirty = true;
+  setSaveStatus("unsaved", "Unsaved changes");
+  clearScheduledAutoSave();
+  autoSaveTimer = setTimeout(async () => {
+    autoSaveTimer = null;
+    if (!codeIsDirty) return;
+    try {
+      await saveProgressDraft({ silent: true, automatic: true });
+    } catch (error) {
+      console.error("Autosave failed:", error);
+      setSaveStatus("error", "Autosave failed — use Save progress");
+    }
+  }, 5000);
+}
+
+function progressDocumentId(taskId) {
+  return `${currentProfile.classId}_${auth.currentUser.uid}_${taskId}`;
+}
+
+function baseProgressData(task, old = {}) {
+  return {
+    classId: currentProfile.classId,
+    userId: auth.currentUser.uid,
+    taskId: task.id,
+    taskTitle: task.title,
+    topic: task.topic,
+    completed: Boolean(old.completed),
+    attempts: old.attempts || 0,
+    incorrectAttempts: old.incorrectAttempts || 0,
+    hintsUsed: old.hintsUsed || 0,
+    firstAttemptCorrect: Boolean(old.firstAttemptCorrect),
+    visualiserUses: old.visualiserUses || 0,
+    errorCounts: old.errorCounts || {}
+  };
+}
+
+async function saveProgressDraft({ silent = false, automatic = false } = {}) {
+  if (!currentTask || !auth.currentUser || currentProfile?.role !== "student" || saveInProgress) return;
+  saveInProgress = true;
+  clearScheduledAutoSave();
+  setSaveStatus("saving", automatic ? "Autosaving…" : "Saving…");
+  elements.saveProgressButton.disabled = true;
+  const progressRef = doc(db, "progress", progressDocumentId(currentTask.id));
+  const old = currentProgress.get(currentTask.id) || {};
+  const data = {
+    ...baseProgressData(currentTask, old),
+    status: old.completed ? "complete" : (old.attempts || 0) > 0 ? "needs_work" : "in_progress",
+    lastCode: elements.codeEditor.value,
+    lastSavedAt: serverTimestamp(),
+    lastActivityAt: serverTimestamp()
+  };
+  try {
+    await setDoc(progressRef, data, { merge: currentProgress.has(currentTask.id) });
+    currentProgress.set(currentTask.id, { ...old, ...data });
+    codeIsDirty = false;
+    const time = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    setSaveStatus("saved", `${automatic ? "Autosaved" : "Saved"} at ${time}`);
+    if (!old.completed) {
+      elements.challengeStatus.textContent = (old.attempts || 0) > 0 ? "Needs work" : "In progress";
+      elements.challengeStatus.className = `status-pill ${(old.attempts || 0) > 0 ? "needs-work" : "working"}`;
+    }
+    if (!silent) {
+      elements.feedbackBox.textContent = "Progress saved. This does not count as an attempt.";
+      elements.feedbackBox.className = "feedback success";
+    }
+  } finally {
+    saveInProgress = false;
+    elements.saveProgressButton.disabled = false;
+  }
+}
+
+elements.saveProgressButton.addEventListener("click", async () => {
+  try {
+    await saveProgressDraft();
+  } catch (error) {
+    console.error("Save progress failed:", error);
+    const code = error.code ? ` [${error.code}]` : "";
+    setSaveStatus("error", "Progress was not saved");
+    elements.feedbackBox.textContent = `${error.message || "Progress could not be saved."}${code}`;
+    elements.feedbackBox.className = "feedback error";
   }
 });
 
@@ -600,12 +805,23 @@ _old_stdout, _old_stderr = sys.stdout, sys.stderr
 sys.stdout = _buffer
 sys.stderr = _buffer
 _error = None
+_steps = {"count": 0}
+
+def _guard(frame, event, arg):
+    if frame.f_code.co_filename == "<student>" and event == "line":
+        _steps["count"] += 1
+        if _steps["count"] > 12000:
+            raise RuntimeError("Stopped: too many steps (possible infinite loop).")
+    return _guard
+
 try:
-    exec(student_code, {})
-except Exception:
+    _compiled = compile(student_code, "<student>", "exec")
+    sys.settrace(_guard)
+    exec(_compiled, {"__name__": "__main__"})
+except BaseException:
     _error = traceback.format_exc()
-    print(_error, end="")
 finally:
+    sys.settrace(None)
     sys.stdout, sys.stderr = _old_stdout, _old_stderr
 json.dumps({"output": _buffer.getvalue(), "error": _error})
   `);
@@ -626,7 +842,7 @@ feedback = []
 try:
     tree = ast.parse(student_code)
 except SyntaxError as error:
-    _result = json.dumps({"correct": False, "feedback": [f"Syntax error on line {error.lineno}: {error.msg}"]})
+    _result = json.dumps({"correct": False, "feedback": ["Syntax error on line " + str(error.lineno) + ": " + str(error.msg)]})
 else:
     def literal(node):
         try:
@@ -644,7 +860,7 @@ else:
 
     for name, value in requirements.get("assignments", {}).items():
         if not assignment_found(name, value):
-            feedback.append(f"Create {name} and set it to {value!r}.")
+            feedback.append("Create " + name + " and set it to " + repr(value) + ".")
 
     operation = requirements.get("binOperation")
     if operation:
@@ -672,12 +888,12 @@ else:
             feedback.append("Use all of the named variables in your calculation.")
         for operator_name in required_ops:
             if operator_name not in calc_ops:
-                feedback.append(f"Your calculation needs a {operator_name} operation.")
+                feedback.append("Your calculation needs a " + operator_name + " operation.")
 
     for node_name in requirements.get("requiredNodes", []):
         node_class = getattr(ast, node_name)
         if not any(isinstance(node, node_class) for node in ast.walk(tree)):
-            feedback.append(f"Use a {node_name.lower()} statement as requested.")
+            feedback.append("Use a " + node_name.lower() + " statement as requested.")
 
     if_names = set(requirements.get("ifUsesNames", []))
     if if_names:
@@ -712,13 +928,13 @@ else:
                     found = True
                     break
         if not found:
-            feedback.append(f"Use range({', '.join(map(str, range_args))}).")
+            feedback.append("Use range(" + ", ".join(map(str, range_args)) + ").")
 
     iter_name = requirements.get("forIteratesName")
     if iter_name:
         found = any(isinstance(node, ast.For) and isinstance(node.iter, ast.Name) and node.iter.id == iter_name for node in ast.walk(tree))
         if not found:
-            feedback.append(f"Traverse the {iter_name} array with your loop.")
+            feedback.append("Traverse the " + iter_name + " array with your loop.")
 
     update_name = requirements.get("updatesVariable")
     if update_name:
@@ -733,15 +949,15 @@ else:
                     if update_name in names:
                         found = True
         if not found:
-            feedback.append(f"Update {update_name} inside the loop to create a running total.")
+            feedback.append("Update " + update_name + " inside the loop to create a running total.")
 
     forbidden = set(requirements.get("forbiddenCalls", []))
     for node in ast.walk(tree):
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in forbidden:
-            feedback.append(f"Do not use {node.func.id}() for this task.")
+            feedback.append("Do not use " + node.func.id + "() for this task.")
 
     if actual_output.strip() != expected_output.strip():
-        feedback.append(f"The output should be exactly: {expected_output!r}.")
+        feedback.append("The output should be exactly: " + repr(expected_output) + ".")
 
     _result = json.dumps({"correct": len(feedback) == 0, "feedback": feedback})
 _result
@@ -749,44 +965,138 @@ _result
   return JSON.parse(String(raw));
 }
 
+function parsePythonError(tracebackText) {
+  const text = String(tracebackText || "").trim();
+  const lines = text.split("\n").map(line => line.trimEnd()).filter(Boolean);
+  const finalLine = lines.at(-1) || "RuntimeError: The program stopped.";
+  const typeMatch = finalLine.match(/^([A-Za-z][A-Za-z0-9_]*Error|SystemExit|KeyboardInterrupt):?\s*(.*)$/);
+  const errorType = typeMatch?.[1] || "RuntimeError";
+  const detail = typeMatch?.[2] || finalLine;
+  const lineMatches = [...text.matchAll(/File "<student>", line (\d+)/g)];
+  const lineNumber = lineMatches.length ? Number(lineMatches.at(-1)[1]) : null;
+  return { text, finalLine, errorType, detail, lineNumber };
+}
+
+function friendlyErrorExplanation(tracebackText) {
+  const parsed = parsePythonError(tracebackText);
+  const lineText = parsed.lineNumber ? `The error happened on line ${parsed.lineNumber}.\n\n` : "";
+  const messages = {
+    SyntaxError: [
+      "Python cannot understand the structure of this line.",
+      "Check for a missing colon after if, elif, else, for or while.",
+      "Check brackets and quotation marks, and make sure you have not used = where == is needed."
+    ],
+    IndentationError: [
+      "The indentation does not match Python's expected structure.",
+      "After a colon, the following line must be indented.",
+      "Make sure elif and else line up with the matching if."
+    ],
+    NameError: [
+      "Python cannot find that variable or function name.",
+      "Check that the variable was created before it was used.",
+      "Compare the spelling and capital letters carefully. Python is case-sensitive."
+    ],
+    TypeError: [
+      "The program used incompatible types together.",
+      "Check whether input needs int() or float().",
+      "Look for a calculation that mixes text with a number."
+    ],
+    ValueError: [
+      "The function received a value it could not convert or use.",
+      "Check what was passed into int() or float().",
+      "Make sure the value has the format your program expects."
+    ],
+    IndexError: [
+      "The program tried to use an array position that does not exist.",
+      "Remember that the first array index is 0.",
+      "Check the array length and the loop range."
+    ],
+    ZeroDivisionError: [
+      "The program tried to divide by zero.",
+      "Check the value used after the division symbol.",
+      "Use a condition to make sure the divisor is not 0 before dividing."
+    ],
+    ImportError: [
+      "The requested module could not be imported.",
+      "Check the module name and whether it is available in this browser version of Python."
+    ],
+    ModuleNotFoundError: [
+      "Python could not find the requested module.",
+      "Check the spelling of the module name and whether the app supports it."
+    ],
+    RuntimeError: [
+      parsed.detail.includes("too many steps")
+        ? "The program was stopped because it may contain an infinite loop."
+        : "The program stopped while it was running.",
+      parsed.detail.includes("too many steps")
+        ? "Check whether the variable in the while condition is updated inside the loop."
+        : "Read the final line of the Python error first, then inspect the indicated code line.",
+      "Use Visualise to inspect the variable values immediately before the error."
+    ]
+  };
+  const advice = messages[parsed.errorType] || messages.RuntimeError;
+  return `${parsed.errorType}\n\n${lineText}${advice.map(item => `• ${item}`).join("\n")}\n\nPython's final message:\n${parsed.finalLine}`;
+}
+
+function showExecutionError(errorText) {
+  elements.standardErrorBox.textContent = String(errorText || "Unknown Python error");
+  elements.friendlyErrorBox.textContent = friendlyErrorExplanation(errorText);
+  elements.errorPanel.classList.remove("hidden");
+  applyErrorViewMode();
+}
+
+function hideExecutionError() {
+  elements.errorPanel.classList.add("hidden");
+  elements.standardErrorBox.textContent = "";
+  elements.friendlyErrorBox.textContent = "";
+}
+
+function setRunningButtons(disabled) {
+  elements.runButton.disabled = disabled;
+  elements.checkButton.disabled = disabled;
+  elements.visualiseButton.disabled = disabled;
+}
+
 elements.runButton.addEventListener("click", async () => {
   if (!currentTask) return;
   clearMessage();
-  elements.runButton.disabled = true;
-  elements.checkButton.disabled = true;
+  setRunningButtons(true);
   elements.outputBox.textContent = "Running…";
   try {
     const result = await runCode(elements.codeEditor.value);
     elements.outputBox.textContent = result.output || "(No output)";
     if (result.error) {
-      elements.feedbackBox.textContent = "Read the error message above and correct the program.";
+      showExecutionError(result.error);
+      elements.feedbackBox.textContent = "Python stopped with an error. Use the two error views below to investigate it.";
       elements.feedbackBox.className = "feedback error";
     } else {
+      hideExecutionError();
       elements.feedbackBox.className = "feedback hidden";
     }
   } catch (error) {
     console.error(error);
-    elements.outputBox.textContent = String(error);
+    elements.outputBox.textContent = "(No output)";
+    showExecutionError(String(error));
     elements.feedbackBox.textContent = "Python could not run. Check the internet connection and reload the page.";
     elements.feedbackBox.className = "feedback error";
   } finally {
-    elements.runButton.disabled = false;
-    elements.checkButton.disabled = false;
+    setRunningButtons(false);
   }
 });
 
 elements.checkButton.addEventListener("click", async () => {
   if (!currentTask) return;
-  elements.runButton.disabled = true;
-  elements.checkButton.disabled = true;
+  setRunningButtons(true);
   elements.outputBox.textContent = "Checking…";
   try {
     const execution = await runCode(elements.codeEditor.value);
     elements.outputBox.textContent = execution.output || "(No output)";
     let grading;
     if (execution.error) {
-      grading = { correct: false, feedback: ["Fix the Python error shown in the output."] };
+      showExecutionError(execution.error);
+      grading = { correct: false, feedback: ["Fix the Python error shown below, then check the answer again."] };
     } else {
+      hideExecutionError();
       grading = await gradeCode(elements.codeEditor.value, currentTask, execution.output);
     }
 
@@ -794,13 +1104,13 @@ elements.checkButton.addEventListener("click", async () => {
       ? "Correct — well done! Your progress has been saved."
       : grading.feedback.join("\n");
     elements.feedbackBox.className = `feedback ${grading.correct ? "success" : "error"}`;
-    await saveAttempt(grading.correct);
+    await saveAttempt(grading.correct, execution.error, grading.feedback);
     if (grading.correct) {
       elements.challengeStatus.textContent = "Complete";
       elements.challengeStatus.className = "status-pill complete";
     } else {
-      elements.challengeStatus.textContent = "In progress";
-      elements.challengeStatus.className = "status-pill working";
+      elements.challengeStatus.textContent = "Needs work";
+      elements.challengeStatus.className = "status-pill needs-work";
     }
   } catch (error) {
     console.error("Check/save failed:", error.code, error.message, error);
@@ -808,42 +1118,38 @@ elements.checkButton.addEventListener("click", async () => {
     elements.feedbackBox.textContent = `${error.message || "The answer could not be checked."}${code}`;
     elements.feedbackBox.className = "feedback error";
   } finally {
-    elements.runButton.disabled = false;
-    elements.checkButton.disabled = false;
+    setRunningButtons(false);
   }
 });
 
-function progressDocumentId(taskId) {
-  return `${currentProfile.classId}_${auth.currentUser.uid}_${taskId}`;
-}
-
-async function saveAttempt(correct) {
+async function saveAttempt(correct, executionError = null, gradingFeedback = []) {
   const progressRef = doc(db, "progress", progressDocumentId(currentTask.id));
-  // Use the progress already loaded for this pupil. On a pupil's first attempt,
-  // the Firestore document does not exist yet, so trying to read it first can
-  // be rejected by rules that rely on resource.data.
   const old = currentProgress.get(currentTask.id) || {};
   const attempts = (old.attempts || 0) + 1;
+  const errorType = executionError ? parsePythonError(executionError).errorType : "";
+  const errorCounts = { ...(old.errorCounts || {}) };
+  if (errorType) errorCounts[errorType] = (errorCounts[errorType] || 0) + 1;
   const data = {
-    classId: currentProfile.classId,
-    userId: auth.currentUser.uid,
-    taskId: currentTask.id,
-    taskTitle: currentTask.title,
-    topic: currentTask.topic,
+    ...baseProgressData(currentTask, old),
     completed: Boolean(old.completed || correct),
+    status: Boolean(old.completed || correct) ? "complete" : "needs_work",
     attempts,
     incorrectAttempts: (old.incorrectAttempts || 0) + (correct ? 0 : 1),
-    hintsUsed: old.hintsUsed || 0,
     firstAttemptCorrect: (old.attempts || 0) === 0 ? Boolean(correct) : Boolean(old.firstAttemptCorrect),
     lastCode: elements.codeEditor.value,
-    lastAttemptAt: serverTimestamp()
+    lastErrorType: errorType || old.lastErrorType || "",
+    errorCounts,
+    lastIssue: correct ? "" : (gradingFeedback?.[0] || errorType || "Answer did not pass"),
+    lastAttemptAt: serverTimestamp(),
+    lastSavedAt: serverTimestamp(),
+    lastActivityAt: serverTimestamp()
   };
-  if (currentProgress.has(currentTask.id)) {
-    await setDoc(progressRef, data, { merge: true });
-  } else {
-    await setDoc(progressRef, data);
-  }
-  currentProgress.set(currentTask.id, data);
+  await setDoc(progressRef, data, { merge: currentProgress.has(currentTask.id) });
+  currentProgress.set(currentTask.id, { ...old, ...data });
+  codeIsDirty = false;
+  clearScheduledAutoSave();
+  const time = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  setSaveStatus("saved", `Saved at ${time}`);
 }
 
 async function saveHintUse() {
@@ -851,23 +1157,234 @@ async function saveHintUse() {
   const progressRef = doc(db, "progress", progressDocumentId(currentTask.id));
   const old = currentProgress.get(currentTask.id) || {};
   const data = {
-    classId: currentProfile.classId,
-    userId: auth.currentUser.uid,
-    taskId: currentTask.id,
-    taskTitle: currentTask.title,
-    topic: currentTask.topic,
-    completed: Boolean(old.completed),
-    attempts: old.attempts || 0,
-    incorrectAttempts: old.incorrectAttempts || 0,
+    ...baseProgressData(currentTask, old),
+    status: old.completed ? "complete" : (old.attempts || 0) > 0 ? "needs_work" : "in_progress",
     hintsUsed: (old.hintsUsed || 0) + 1,
-    firstAttemptCorrect: Boolean(old.firstAttemptCorrect),
     lastCode: elements.codeEditor.value,
-    lastAttemptAt: serverTimestamp()
+    lastSavedAt: serverTimestamp(),
+    lastActivityAt: serverTimestamp()
   };
-  if (currentProgress.has(currentTask.id)) {
-    await setDoc(progressRef, data, { merge: true });
-  } else {
-    await setDoc(progressRef, data);
-  }
-  currentProgress.set(currentTask.id, data);
+  await setDoc(progressRef, data, { merge: currentProgress.has(currentTask.id) });
+  currentProgress.set(currentTask.id, { ...old, ...data });
+  codeIsDirty = false;
+  clearScheduledAutoSave();
+  const time = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  setSaveStatus("saved", `Saved at ${time}`);
 }
+
+async function traceCode(code) {
+  const python = await ensurePyodide();
+  python.globals.set("student_code", code);
+  const raw = await python.runPythonAsync(`
+import io, sys, traceback, json
+_lines = student_code.splitlines()
+_steps = []
+_counter = {"n": 0}
+_buffer = io.StringIO()
+_old_stdout, _old_stderr = sys.stdout, sys.stderr
+sys.stdout = _buffer
+sys.stderr = _buffer
+_error = None
+
+
+def _safe_repr(value):
+    try:
+        text = repr(value)
+        return text if len(text) <= 240 else text[:237] + "..."
+    except Exception:
+        return "<unprintable>"
+
+
+def _snapshot(frame):
+    result = {}
+    for name, value in frame.f_locals.items():
+        if not name.startswith("__"):
+            result[name] = _safe_repr(value)
+    return result
+
+
+def _tracer(frame, event, arg):
+    if frame.f_code.co_filename != "<student>":
+        return _tracer
+    if event == "line":
+        _counter["n"] += 1
+        if _counter["n"] > 500:
+            raise RuntimeError("Stopped: too many steps (possible infinite loop).")
+        _steps.append({
+            "line": frame.f_lineno,
+            "event": "line",
+            "variables": _snapshot(frame),
+            "output": _buffer.getvalue()
+        })
+    return _tracer
+
+_env = {"__name__": "__main__"}
+try:
+    _compiled = compile(student_code, "<student>", "exec")
+    sys.settrace(_tracer)
+    exec(_compiled, _env, _env)
+    sys.settrace(None)
+    _steps.append({
+        "line": 0,
+        "event": "done",
+        "variables": {name: _safe_repr(value) for name, value in _env.items() if not name.startswith("__")},
+        "output": _buffer.getvalue()
+    })
+except BaseException as exc:
+    sys.settrace(None)
+    _error = traceback.format_exc()
+    _line = getattr(exc, "lineno", None)
+    if not _line and _steps:
+        _line = _steps[-1].get("line", 0)
+    _steps.append({
+        "line": int(_line or 0),
+        "event": "error",
+        "variables": {name: _safe_repr(value) for name, value in _env.items() if not name.startswith("__")},
+        "output": _buffer.getvalue()
+    })
+finally:
+    sys.settrace(None)
+    sys.stdout, sys.stderr = _old_stdout, _old_stderr
+json.dumps({"steps": _steps, "error": _error, "output": _buffer.getvalue()})
+  `);
+  return JSON.parse(String(raw));
+}
+
+function stopTracePlayback() {
+  if (tracePlayTimer) {
+    clearInterval(tracePlayTimer);
+    tracePlayTimer = null;
+  }
+  if (elements.playTraceButton) elements.playTraceButton.textContent = "Play";
+}
+
+function renderTraceStep(index) {
+  if (!traceSteps.length || !currentTask) return;
+  traceIndex = Math.max(0, Math.min(index, traceSteps.length - 1));
+  const step = traceSteps[traceIndex];
+  const previous = traceIndex > 0 ? traceSteps[traceIndex - 1] : { variables: {} };
+  const lines = elements.codeEditor.value.split("\n");
+
+  elements.visualiserCode.innerHTML = lines.map((line, i) => {
+    const lineNumber = i + 1;
+    const current = step.line === lineNumber ? " current" : "";
+    return `<div class="code-line${current}"><span class="code-line-number">${lineNumber}</span><span class="code-line-text">${escapeHtml(line || " ")}</span></div>`;
+  }).join("");
+
+  const variables = step.variables || {};
+  const names = Object.keys(variables).sort();
+  if (!names.length) {
+    elements.visualiserVariables.innerHTML = `<tr><td colspan="2" class="empty-table">No variables have been created yet.</td></tr>`;
+  } else {
+    elements.visualiserVariables.innerHTML = names.map(name => {
+      const changed = previous.variables?.[name] !== variables[name] ? "changed" : "";
+      return `<tr class="${changed}"><td>${escapeHtml(name)}</td><td>${escapeHtml(variables[name])}</td></tr>`;
+    }).join("");
+  }
+
+  elements.visualiserOutput.textContent = step.output || "(no output)";
+  const description = step.event === "done"
+    ? "Program finished"
+    : step.event === "error"
+      ? `Program stopped with an error near line ${step.line || "?"}`
+      : `About to run line ${step.line}`;
+  elements.visualiserStepLabel.textContent = `Step ${traceIndex + 1} of ${traceSteps.length} · ${description}`;
+
+  elements.firstStepButton.disabled = traceIndex === 0;
+  elements.previousStepButton.disabled = traceIndex === 0;
+  elements.nextStepButton.disabled = traceIndex === traceSteps.length - 1;
+  elements.lastStepButton.disabled = traceIndex === traceSteps.length - 1;
+}
+
+async function recordVisualiserUse() {
+  if (!currentTask || !auth.currentUser || currentProfile?.role !== "student") return;
+  const progressRef = doc(db, "progress", progressDocumentId(currentTask.id));
+  const old = currentProgress.get(currentTask.id) || {};
+  const data = {
+    ...baseProgressData(currentTask, old),
+    status: old.completed ? "complete" : (old.attempts || 0) > 0 ? "needs_work" : "in_progress",
+    visualiserUses: (old.visualiserUses || 0) + 1,
+    lastCode: elements.codeEditor.value,
+    lastVisualisedAt: serverTimestamp(),
+    lastSavedAt: serverTimestamp(),
+    lastActivityAt: serverTimestamp()
+  };
+  await setDoc(progressRef, data, { merge: currentProgress.has(currentTask.id) });
+  currentProgress.set(currentTask.id, { ...old, ...data });
+  codeIsDirty = false;
+  clearScheduledAutoSave();
+  const time = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  setSaveStatus("saved", `Saved at ${time}`);
+}
+
+elements.visualiseButton.addEventListener("click", async () => {
+  if (!currentTask) return;
+  setRunningButtons(true);
+  elements.visualiserPanel.classList.remove("hidden");
+  elements.visualiserStepLabel.textContent = "Building the line-by-line replay…";
+  elements.visualiserCode.innerHTML = "";
+  elements.visualiserVariables.innerHTML = `<tr><td colspan="2" class="empty-table">Loading…</td></tr>`;
+  elements.visualiserOutput.textContent = "(no output)";
+  try {
+    const result = await traceCode(elements.codeEditor.value);
+    traceSteps = result.steps || [];
+    if (!traceSteps.length) {
+      traceSteps = [{ line: 0, event: "error", variables: {}, output: result.output || "" }];
+    }
+    renderTraceStep(0);
+    if (result.error) showExecutionError(result.error);
+    else hideExecutionError();
+    await recordVisualiserUse();
+    elements.visualiserPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    console.error("Visualiser failed:", error);
+    showExecutionError(String(error));
+    elements.visualiserStepLabel.textContent = "The visualiser could not run this program.";
+  } finally {
+    setRunningButtons(false);
+  }
+});
+
+elements.closeVisualiserButton.addEventListener("click", () => {
+  stopTracePlayback();
+  elements.visualiserPanel.classList.add("hidden");
+});
+
+elements.firstStepButton.addEventListener("click", () => {
+  stopTracePlayback();
+  renderTraceStep(0);
+});
+elements.previousStepButton.addEventListener("click", () => {
+  stopTracePlayback();
+  renderTraceStep(traceIndex - 1);
+});
+elements.nextStepButton.addEventListener("click", () => {
+  stopTracePlayback();
+  renderTraceStep(traceIndex + 1);
+});
+elements.lastStepButton.addEventListener("click", () => {
+  stopTracePlayback();
+  renderTraceStep(traceSteps.length - 1);
+});
+elements.playTraceButton.addEventListener("click", () => {
+  if (!traceSteps.length) return;
+  if (tracePlayTimer) {
+    stopTracePlayback();
+    return;
+  }
+  if (traceIndex >= traceSteps.length - 1) renderTraceStep(0);
+  elements.playTraceButton.textContent = "Pause";
+  tracePlayTimer = setInterval(() => {
+    if (traceIndex >= traceSteps.length - 1) {
+      stopTracePlayback();
+      return;
+    }
+    renderTraceStep(traceIndex + 1);
+  }, 900);
+});
+
+window.addEventListener("beforeunload", event => {
+  if (currentProfile?.role === "student" && currentTask && codeIsDirty) {
+    event.preventDefault();
+  }
+});

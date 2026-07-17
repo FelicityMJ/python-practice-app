@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Python practice with classes and saved progress">
+  <meta name="description" content="Python practice with classes, saved progress and code visualisation">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=4.0">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>Python Practice</h1>
-      <p id="headerSubtitle">Practise, improve and track your progress</p>
+      <p id="headerSubtitle">Practise, visualise and track your progress</p>
     </div>
     <div id="signedInControls" class="signed-in-controls hidden">
       <span id="currentUserLabel"></span>
@@ -118,6 +118,7 @@
               <tr>
                 <th>Pupil</th>
                 <th>Completed</th>
+                <th>In progress</th>
                 <th>Attempts</th>
                 <th>First-time success</th>
                 <th>Last active</th>
@@ -156,13 +157,18 @@
         <pre id="expectedOutput" class="expected-output"></pre>
       </section>
 
-      <section class="card">
-        <p id="pythonStatus" class="loading-text">Python will load when you run the first program.</p>
+      <section class="card editor-card">
+        <div class="editor-heading">
+          <p id="pythonStatus" class="loading-text">Python will load when you run the first program.</p>
+          <span id="saveStatus" class="save-status">No unsaved changes</span>
+        </div>
         <textarea id="codeEditor" spellcheck="false" aria-label="Python code editor"></textarea>
-        <div class="button-row">
+        <div class="button-row six-buttons">
           <button id="runButton">Run</button>
           <button id="checkButton" class="success-button">Check answer</button>
+          <button id="visualiseButton" class="visualise-button">Visualise</button>
           <button id="hintButton" class="warning-button">Hint</button>
+          <button id="saveProgressButton" class="save-button">Save progress</button>
           <button id="resetButton" class="secondary">Reset</button>
         </div>
       </section>
@@ -172,13 +178,69 @@
         <pre id="outputBox" class="console">Press Run to test your program.</pre>
         <div id="feedbackBox" class="feedback hidden"></div>
       </section>
+
+      <section id="errorPanel" class="card error-panel hidden">
+        <div class="panel-heading error-heading">
+          <div>
+            <h3>Python error</h3>
+            <p class="help-text">Switch between the normal Python traceback and a pupil-friendly explanation.</p>
+          </div>
+        </div>
+        <div class="error-tab-row" role="tablist" aria-label="Error explanation view">
+          <button id="standardErrorTab" type="button" class="error-tab active">Python error</button>
+          <button id="friendlyErrorTab" type="button" class="error-tab">Explain this error</button>
+        </div>
+        <pre id="standardErrorBox" class="console error-console"></pre>
+        <div id="friendlyErrorBox" class="friendly-error hidden"></div>
+      </section>
+
+      <section id="visualiserPanel" class="card visualiser-panel hidden">
+        <div class="panel-heading">
+          <div>
+            <h3>Code visualiser</h3>
+            <p id="visualiserStepLabel" class="help-text">Run the visualiser to replay your program line by line.</p>
+          </div>
+          <button id="closeVisualiserButton" class="secondary small">Close visualiser</button>
+        </div>
+
+        <div class="visualiser-controls">
+          <button id="firstStepButton" class="secondary small">|&lt; First</button>
+          <button id="previousStepButton" class="secondary small">&lt; Previous</button>
+          <button id="playTraceButton" class="small">Play</button>
+          <button id="nextStepButton" class="secondary small">Next &gt;</button>
+          <button id="lastStepButton" class="secondary small">Last &gt;|</button>
+        </div>
+
+        <div class="visualiser-grid">
+          <section>
+            <h4>Code</h4>
+            <div id="visualiserCode" class="visualiser-code" aria-label="Code with current line highlighted"></div>
+          </section>
+          <section>
+            <h4>Variables</h4>
+            <div class="table-wrap">
+              <table class="variables-table">
+                <thead>
+                  <tr><th>Name</th><th>Value</th></tr>
+                </thead>
+                <tbody id="visualiserVariables"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <section>
+          <h4>Output at this step</h4>
+          <pre id="visualiserOutput" class="console visualiser-output">(no output)</pre>
+        </section>
+      </section>
     </section>
   </main>
 
   <footer>
-    <p>Python Practice prototype v3.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v4.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
-  <script type="module" src="app.js?v=3.1"></script>
+  <script type="module" src="app.js?v=4.0"></script>
 </body>
 </html>
