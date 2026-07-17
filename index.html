@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Python practice with classes, saved progress and code visualisation">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=4.2">
+  <link rel="stylesheet" href="styles.css?v=4.3.1">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
@@ -528,23 +528,64 @@
   </main>
 
   <footer>
-    <p>Python Practice prototype v4.3 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v4.3.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
   <script>
     window.PYTHON_PRACTICE_READY = false;
-    window.setTimeout(function () {
-      if (window.PYTHON_PRACTICE_READY) return;
+
+    function clearApplicationLoadingMessage() {
       var box = document.getElementById("messageBox");
       if (!box) return;
-      box.textContent =
-        "The application code did not load. Refresh the page with Ctrl + Shift + R. " +
-        "If this message remains, check that index.html and app.js were both replaced.";
+      if (box.dataset.applicationLoader === "true") {
+        box.textContent = "";
+        box.className = "message hidden";
+        delete box.dataset.applicationLoader;
+      }
+    }
+
+    function showApplicationLoadingMessage(message) {
+      var box = document.getElementById("messageBox");
+      if (!box) return;
+      box.dataset.applicationLoader = "true";
+      box.textContent = message;
       box.className = "message error";
-    }, 4000);
+    }
+
+    window.addEventListener("python-practice-ready", clearApplicationLoadingMessage);
+
+    window.PYTHON_PRACTICE_LOAD_TIMER = window.setTimeout(function () {
+      if (window.PYTHON_PRACTICE_READY) return;
+      showApplicationLoadingMessage(
+        "The application is taking longer than expected to start. Please wait a few more seconds. " +
+        "If it does not open, reload once or check the technical message that appears."
+      );
+    }, 15000);
   </script>
 
-  <script type="module" src="app.js?v=4.3"></script>
+  <script type="module">
+    import("./app-v4-3-1.js")
+      .then(function () {
+        window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
+        if (window.PYTHON_PRACTICE_READY) {
+          clearApplicationLoadingMessage();
+        } else {
+          showApplicationLoadingMessage(
+            "The application file loaded but could not finish starting. " +
+            "Open Developer Tools and check the Console, or upload index.html and app-v4-3-1.js again."
+          );
+        }
+      })
+      .catch(function (error) {
+        window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
+        console.error("Python Practice failed to start:", error);
+        var detail = error && error.message ? error.message : String(error);
+        showApplicationLoadingMessage(
+          "The application could not start. Technical detail: " + detail +
+          ". Upload index.html and app-v4-3-1.js again and make sure both filenames are exact."
+        );
+      });
+  </script>
 </body>
 </html>
