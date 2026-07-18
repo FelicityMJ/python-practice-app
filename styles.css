@@ -1309,3 +1309,12 @@ button.good { background:#237b57; color:#fff; }
   .code-editor-shell .code-highlight,
   .code-editor-shell .smart-code-input { font-size: 14px; padding: 12px; }
 }
+
+.activity-row.fluency-row {
+  border-left: 5px solid var(--purple);
+  background: #fbf9ff;
+}
+.activity-chip.fluency-chip {
+  background: #eee8ff;
+  color: #4d2ea1;
+}

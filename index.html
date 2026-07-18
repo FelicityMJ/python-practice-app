@@ -411,14 +411,6 @@
       <section id="areaCards" class="area-grid"></section>
 
       <section id="pathwayPanel" class="hidden">
-        <div class="pathway-heading card">
-          <div>
-            <p class="eyebrow">Software Design and Development</p>
-            <h3>Python foundations pathway</h3>
-            <p>Complete the required activities in order. Optional official-paper practice appears beside the skills it matches.</p>
-          </div>
-          <button id="continueActivityButton">Continue next activity</button>
-        </div>
         <div id="unitList" class="unit-list"></div>
       </section>
     </section>
@@ -741,7 +733,7 @@
   </div>
 
   <footer>
-    <p>Python Practice prototype v8.1.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v8.1.2 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -778,7 +770,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-1-1.js")
+    import("./app-v8-1-2.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -786,7 +778,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-1-1.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-1-2.js again."
           );
         }
       })
