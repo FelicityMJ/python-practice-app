@@ -644,7 +644,11 @@
           <p id="pythonStatus" class="loading-text">Python will load when you run the first program.</p>
           <span id="saveStatus" class="save-status">No unsaved changes</span>
         </div>
-        <textarea id="codeEditor" spellcheck="false" aria-label="Python code editor"></textarea>
+        <div id="mainCodeEditorShell" class="code-editor-shell">
+          <pre class="code-highlight" aria-hidden="true"></pre>
+          <textarea id="codeEditor" class="smart-code-input" spellcheck="false" wrap="off" aria-label="Python code editor"></textarea>
+        </div>
+        <p class="editor-keyboard-help">IDLE-style colours · Tab inserts four spaces · after a line ending in <code>:</code>, Enter indents the next line automatically.</p>
         <div class="button-row six-buttons">
           <button id="runButton">Run</button>
           <button id="checkButton" class="success-button">Check answer</button>
@@ -737,7 +741,7 @@
   </div>
 
   <footer>
-    <p>Python Practice prototype v8.0.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v8.1.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -774,7 +778,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-0-1.js")
+    import("./app-v8-1.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -782,7 +786,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-0-1.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-1.js again."
           );
         }
       })

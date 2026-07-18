@@ -1232,3 +1232,80 @@ button.good { background:#237b57; color:#fff; }
 .revision-next-actions { margin-top: 16px; justify-content: flex-end; }
 .revision-next-actions button { min-width: 210px; font-size: 1.05rem; }
 .revision-rating-buttons button.selected-rating { outline: 4px solid rgba(59, 91, 219, .28); outline-offset: 2px; transform: translateY(-1px); }
+
+
+/* v8.1: IDLE-style Python editor and integrated SDD fluency workspace */
+.code-editor-shell {
+  position: relative;
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.code-editor-shell:focus-within {
+  outline: 3px solid rgba(56, 103, 232, .18);
+  border-color: var(--blue);
+}
+.code-editor-shell .code-highlight,
+.code-editor-shell .smart-code-input {
+  margin: 0;
+  padding: 15px;
+  width: 100%;
+  min-height: 290px;
+  border: 0;
+  border-radius: 0;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+}
+.code-editor-shell .code-highlight {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  color: #000;
+  background: #fff;
+}
+.code-editor-shell .smart-code-input {
+  position: relative;
+  z-index: 2;
+  display: block;
+  resize: vertical;
+  background: transparent;
+  color: #111;
+  caret-color: #111;
+  outline: 0;
+}
+.code-editor-shell.syntax-ready .smart-code-input {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.code-editor-shell.syntax-ready .smart-code-input::selection {
+  background: rgba(48, 112, 210, .28);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.idle-keyword { color: #ff7700; font-weight: 700; }
+.idle-builtin { color: #900090; }
+.idle-string { color: #00a000; }
+.idle-comment { color: #dd0000; font-style: italic; }
+.idle-number { color: #0000cc; }
+.editor-keyboard-help,
+.editor-help-line {
+  color: var(--muted);
+  font-size: .92rem;
+}
+.editor-keyboard-help { margin: 8px 2px 0; }
+.fluency-challenge-prompt { font-size: 1.08rem; margin: 16px 0 6px; }
+.challenge-card .fluency-progress-strip { margin: 4px 0 14px; }
+.fluency-progress-strip span.current { outline: 3px solid rgba(56,103,232,.22); }
+.fluency-progress-strip span.complete { background: var(--green); color: white; border-color: var(--green); }
+.fluency-editor.code-editor-shell, .fluency-shell .code-editor-shell { margin-top: 8px; }
+@media (max-width: 720px) {
+  .code-editor-shell .code-highlight,
+  .code-editor-shell .smart-code-input { font-size: 14px; padding: 12px; }
+}
