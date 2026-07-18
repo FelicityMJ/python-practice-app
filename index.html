@@ -512,6 +512,7 @@
           </div>
           <div id="revisionRatingButtons" class="revision-rating-buttons hidden"><p><strong>How securely did you recall it?</strong></p><button id="revisionNotSecureButton" type="button" class="danger">Not secure</button><button id="revisionPartlySecureButton" type="button" class="secondary">Partly secure</button><button id="revisionSecureButton" type="button" class="good">Secure</button></div>
           <div id="revisionCardFeedback" class="feedback hidden" aria-live="polite"></div>
+          <div id="revisionNextActions" class="activity-actions revision-next-actions hidden"><button id="revisionNextButton" type="button">Next flashcard →</button></div>
         </div>
         <div id="revisionSummaryPanel" class="hidden"></div>
       </section>
@@ -736,7 +737,7 @@
   </div>
 
   <footer>
-    <p>Python Practice prototype v8.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v8.0.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -773,7 +774,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8.js")
+    import("./app-v8-0-1.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -781,7 +782,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-0-1.js again."
           );
         }
       })

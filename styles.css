@@ -1227,3 +1227,8 @@ footer { text-align: center; color: var(--muted); padding: 20px; font-size: .9re
 .compact-response { min-height:110px; }
 button.good { background:#237b57; color:#fff; }
 @media (max-width:760px){.revision-hub-card{align-items:stretch;flex-direction:column}.revision-setup-grid,.revision-topic-grid,.revision-compare-grid{grid-template-columns:1fr}.revision-rating-buttons button{flex:1}.fluency-progress-strip{gap:4px}}
+
+/* v8.0.1 revision navigation */
+.revision-next-actions { margin-top: 16px; justify-content: flex-end; }
+.revision-next-actions button { min-width: 210px; font-size: 1.05rem; }
+.revision-rating-buttons button.selected-rating { outline: 4px solid rgba(59, 91, 219, .28); outline-offset: 2px; transform: translateY(-1px); }
