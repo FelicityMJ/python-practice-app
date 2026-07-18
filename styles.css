@@ -1160,3 +1160,41 @@ footer { text-align: center; color: var(--muted); padding: 20px; font-size: .9re
   .binary-calculator { grid-template-columns:1fr; }
   .binary-calculator output { min-height:42px; }
 }
+
+
+/* v7.0.2 — keyboard flow and consistent next-question navigation */
+.binary-place-entry-row input.entry-correct,
+.binary-contribution-row input.entry-correct {
+  border-color: #25835b;
+  background: #eefaf5;
+  box-shadow: inset 0 0 0 1px rgba(37, 131, 91, .18);
+}
+
+.next-question-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(45, 62, 96, .18);
+}
+
+.next-question-button {
+  min-width: 180px;
+  background: #243fc5;
+  color: #fff;
+  box-shadow: 0 6px 15px rgba(36, 63, 197, .2);
+}
+
+.next-question-button:hover:not(:disabled) {
+  background: #1933b5;
+}
+
+.next-question-button:focus-visible {
+  outline: 4px solid rgba(36, 63, 197, .25);
+  outline-offset: 3px;
+}
+
+@media (max-width: 620px) {
+  .next-question-actions { justify-content: stretch; }
+  .next-question-button { width: 100%; }
+}
