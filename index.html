@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Complete National 5 Software Design and Development pathway with Python, design, testing and exam practice">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=7.0.2">
+  <link rel="stylesheet" href="styles.css?v=8.0">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
@@ -379,6 +379,16 @@
         <button id="startSpacedPracticeButton" type="button">Start my spaced practice</button>
       </section>
 
+      <section id="revisionHubCard" class="card revision-hub-card">
+        <div>
+          <p class="eyebrow">Revision Hub</p>
+          <h3>Approved flashcards with spaced retrieval</h3>
+          <p id="revisionHubDescription">Type an answer before comparing it with the accepted National 5 wording.</p>
+          <div id="revisionHubMeta" class="activity-meta"></div>
+        </div>
+        <button id="openRevisionHubButton" type="button">Open Revision Hub</button>
+      </section>
+
 
       <section id="gamesLabCard" class="card games-lab-card">
         <div>
@@ -471,6 +481,39 @@
         </div>
         <div id="logicQuestionPanel" class="hidden"><div class="logic-question-header"><span id="logicModeLabel" class="activity-chip"></span></div><div id="logicQuestionContent"></div><div class="activity-actions"><button id="submitLogicAnswerButton" type="button">Submit answer</button><button id="logicNextButton" type="button" class="secondary hidden">Next question</button></div><div id="logicFeedback" class="feedback hidden" aria-live="polite"></div></div>
         <div id="logicSummaryPanel" class="hidden"></div>
+      </section>
+    </section>
+
+
+    <section id="revisionView" class="hidden">
+      <button id="backFromRevisionButton" class="secondary">← Back to dashboard</button>
+      <section class="card revision-session-card">
+        <div class="challenge-heading"><div><p class="eyebrow">Revision Hub</p><h2>Retrieve, compare and space</h2><p class="help-text">Your typed answer stays visible beside the accepted wording. You decide how securely you recalled it.</p></div><span id="revisionProgress" class="progress-badge">Ready</span></div>
+        <div id="revisionSetupPanel">
+          <div class="revision-setup-grid">
+            <label>Course area<select id="revisionAreaFilter"></select></label>
+            <label>Session type<select id="revisionModeInput"><option value="due">Due for review</option><option value="weak">Weak topics</option><option value="exam">Exam-style mix</option><option value="choose">Choose my own</option></select></label>
+            <label>Number of cards<select id="revisionLengthInput"><option value="5">5 cards</option><option value="10" selected>10 cards</option><option value="20">20 cards</option></select></label>
+          </div>
+          <p id="revisionSetupSummary" class="revision-setup-summary"></p>
+          <h3>Select topics</h3><div id="revisionTopicChoices" class="revision-topic-grid"></div>
+          <div class="activity-actions"><button id="startRevisionSessionButton" type="button">Start revision</button></div>
+          <div id="revisionSetupFeedback" class="feedback hidden"></div>
+        </div>
+        <div id="revisionCardPanel" class="hidden">
+          <div id="revisionCardMeta" class="spaced-question-meta"></div>
+          <h3 id="revisionPrompt" class="revision-prompt"></h3>
+          <label>Type everything you can remember<textarea id="revisionAnswerInput" class="written-response revision-answer" placeholder="Answer from memory before revealing the accepted wording."></textarea></label>
+          <div class="activity-actions"><button id="compareRevisionAnswerButton" type="button">Compare answer</button></div>
+          <div id="revisionComparePanel" class="revision-compare-grid hidden">
+            <section><h4>Your answer</h4><div id="revisionOwnAnswerMirror" class="revision-answer-panel"></div></section>
+            <section><h4>Accepted answer</h4><pre id="revisionAcceptedAnswer" class="revision-answer-panel accepted"></pre></section>
+            <section id="revisionMarkPoints" class="revision-mark-points"></section>
+          </div>
+          <div id="revisionRatingButtons" class="revision-rating-buttons hidden"><p><strong>How securely did you recall it?</strong></p><button id="revisionNotSecureButton" type="button" class="danger">Not secure</button><button id="revisionPartlySecureButton" type="button" class="secondary">Partly secure</button><button id="revisionSecureButton" type="button" class="good">Secure</button></div>
+          <div id="revisionCardFeedback" class="feedback hidden" aria-live="polite"></div>
+        </div>
+        <div id="revisionSummaryPanel" class="hidden"></div>
       </section>
     </section>
 
@@ -693,7 +736,7 @@
   </div>
 
   <footer>
-    <p>Python Practice prototype v7.0.2 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v8.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -730,7 +773,7 @@
   </script>
 
   <script type="module">
-    import("./app-v7-0-2.js")
+    import("./app-v8.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -738,7 +781,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v7-0-2.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8.js again."
           );
         }
       })
@@ -748,7 +791,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v7-0-2.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8.js again and make sure both filenames are exact."
         );
       });
   </script>

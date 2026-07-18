@@ -1198,3 +1198,32 @@ footer { text-align: center; color: var(--muted); padding: 20px; font-size: .9re
   .next-question-actions { justify-content: stretch; }
   .next-question-button { width: 100%; }
 }
+
+
+/* v8.0 — Revision Hub and six-attempt fluency */
+.revision-hub-card { display:flex; justify-content:space-between; gap:24px; align-items:center; border-left:7px solid #7b41a6; }
+.revision-session-card { max-width:1180px; margin:18px auto; }
+.revision-setup-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.revision-setup-summary { padding:12px 14px; border-radius:10px; background:#f0f2fb; }
+.revision-topic-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:16px; }
+.revision-topic-choice { display:flex; gap:9px; align-items:flex-start; padding:10px 12px; border:1px solid #d6dceb; border-radius:10px; background:#fff; }
+.revision-prompt { margin:20px 0; font-size:1.35rem; }
+.revision-answer { min-height:150px; }
+.revision-compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px; }
+.revision-compare-grid section { min-width:0; }
+.revision-answer-panel { min-height:160px; margin:0; padding:16px; white-space:pre-wrap; overflow-wrap:anywhere; border:1px solid #d7ddeb; border-radius:12px; background:#f8f9fd; font:inherit; }
+.revision-answer-panel.accepted { background:#eef8f3; border-color:#b7dbc9; }
+.revision-mark-points { grid-column:1/-1; padding:14px; border-radius:12px; background:#fff9e8; border:1px solid #ead9a4; }
+.revision-point { display:flex; gap:9px; padding:6px 0; }
+.revision-rating-buttons { margin-top:18px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.revision-rating-buttons p { flex-basis:100%; margin:0; }
+.revision-summary-hero { padding:18px; border-radius:14px; background:#eef1ff; }
+.fluency-shell { padding:18px; border:1px solid #d6dceb; border-radius:14px; background:#fff; }
+.fluency-progress-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:14px 0 22px; }
+.fluency-progress-strip span { display:grid; place-items:center; min-height:38px; border-radius:999px; background:#edf0f7; font-weight:800; }
+.fluency-progress-strip span.current { outline:3px solid #5a67e8; background:#eef0ff; }
+.fluency-progress-strip span.complete { background:#dff3e9; color:#1f6c4e; }
+.fluency-editor { min-height:180px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+.compact-response { min-height:110px; }
+button.good { background:#237b57; color:#fff; }
+@media (max-width:760px){.revision-hub-card{align-items:stretch;flex-direction:column}.revision-setup-grid,.revision-topic-grid,.revision-compare-grid{grid-template-columns:1fr}.revision-rating-buttons button{flex:1}.fluency-progress-strip{gap:4px}}
