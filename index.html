@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Complete National 5 Software Design and Development pathway with Python, design, testing and exam practice">
   <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=7.0">
+  <link rel="stylesheet" href="styles.css?v=7.0.1">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
@@ -693,7 +693,7 @@
   </div>
 
   <footer>
-    <p>Python Practice prototype v7.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Python Practice prototype v7.0.1 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -730,7 +730,7 @@
   </script>
 
   <script type="module">
-    import("./app-v7.js")
+    import("./app-v7-0-1.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -738,7 +738,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v7.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v7-0-1.js again."
           );
         }
       })
@@ -748,7 +748,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v7.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v7-0-1.js again and make sure both filenames are exact."
         );
       });
   </script>
