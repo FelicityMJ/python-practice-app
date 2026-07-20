@@ -439,6 +439,16 @@
             <div><strong>5. Retry</strong><span>Return to the task without copying the answer.</span></div>
             <div><strong>6. Revisit</strong><span>Spaced practice brings the skill back before it fades.</span></div>
           </div>
+          <div class="accelerator-practical-grid">
+            <div class="accelerator-practical-card">
+              <span class="route-icon" aria-hidden="true">🐍</span>
+              <div><strong>Python practical workspace</strong><span>Write and edit code with IDLE-style colours, four-space Tab indentation and automatic indentation after <code>:</code>. Run the program or replay it line by line with Visualise.</span></div>
+            </div>
+            <div class="accelerator-practical-card">
+              <span class="route-icon" aria-hidden="true">🗄️</span>
+              <div><strong>Live SQL database laboratory</strong><span>Run SELECT, INSERT, UPDATE and DELETE statements on real relational tables. See records immediately and trigger genuine key, data-type and referential-integrity errors.</span></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -809,7 +819,7 @@
   </div>
 
   <footer>
-    <p>Nat 5 Computing prototype v8.2.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Nat 5 Computing prototype v8.2.2 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -846,7 +856,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-2-1.js")
+    import("./app-v8-2-2.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -854,7 +864,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-2-1.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-2-2.js again."
           );
         }
       })
@@ -864,7 +874,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8-2-1.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-2-2.js again and make sure both filenames are exact."
         );
       });
   </script>

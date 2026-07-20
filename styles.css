@@ -1447,3 +1447,37 @@ button.good { background:#237b57; color:#fff; }
   .licence-status-card,
   .accelerator-method-heading { align-items: flex-start; flex-direction: column; }
 }
+
+
+/* v8.2.2: practical accelerator laboratories */
+.accelerator-practical-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.accelerator-practical-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+.accelerator-practical-card .route-icon {
+  flex: 0 0 auto;
+  font-size: 1.45rem;
+}
+.accelerator-practical-card strong,
+.accelerator-practical-card span {
+  display: block;
+}
+.accelerator-practical-card div > span {
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+@media (max-width: 760px) {
+  .accelerator-practical-grid { grid-template-columns: 1fr; }
+}
