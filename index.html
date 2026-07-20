@@ -212,27 +212,31 @@
         </div>
         <div id="classStats" class="stats-grid compact"></div>
         <section class="class-focus-panel">
-          <div>
+          <div class="class-focus-intro">
             <h4>Spaced-learning focus</h4>
             <p class="help-text">Sessions mainly use the current course area, then interleave earlier learning from every area pupils have studied.</p>
           </div>
-          <label>Current course area
-            <select id="classFocusAreaInput">
-              <option value="auto">Automatic — use each pupil's current work</option>
-              <option value="sdd">SDD — Software Design and Development</option>
-              <option value="ddd">DDD — Database Design and Development</option>
-              <option value="cs">CS — Computer Systems</option>
-            </select>
-          </label>
-          <label>Current unit
-            <select id="classFocusUnitInput"><option value="">Automatic / whole area</option></select>
-          </label>
-          <label>Expected progress
-            <input id="classExpectedCompletedInput" type="number" min="0" step="1" value="0">
-            <span class="help-text">Required activities pupils should have completed by now. Use 0 to turn pace flags off.</span>
-          </label>
-          <button id="saveClassFocusButton" type="button">Save focus</button>
-          <span id="classFocusSaveStatus" class="help-text"></span>
+          <div class="class-focus-controls">
+            <label>Current course area
+              <select id="classFocusAreaInput">
+                <option value="auto">Automatic — use each pupil's current work</option>
+                <option value="sdd">SDD — Software Design and Development</option>
+                <option value="ddd">DDD — Database Design and Development</option>
+                <option value="cs">CS — Computer Systems</option>
+              </select>
+            </label>
+            <label>Current unit
+              <select id="classFocusUnitInput"><option value="">Automatic / whole area</option></select>
+            </label>
+            <label>Expected progress
+              <input id="classExpectedCompletedInput" type="number" min="0" step="1" value="0">
+              <span class="help-text focus-help">Required activities pupils should have completed by now. Use 0 to turn pace flags off.</span>
+            </label>
+            <div class="class-focus-action">
+              <button id="saveClassFocusButton" type="button">Save focus</button>
+              <span id="classFocusSaveStatus" class="help-text" aria-live="polite"></span>
+            </div>
+          </div>
         </section>
         <div class="subsection-heading teacher-insights-heading">
           <div>
@@ -419,6 +423,23 @@
           </button>
         </div>
         <div id="learningRouteNotice" class="route-notice"></div>
+        <div id="acceleratorMethodPanel" class="accelerator-method-panel hidden">
+          <div class="accelerator-method-heading">
+            <div>
+              <p class="eyebrow">How the rapid route works</p>
+              <h4>Attempt, retrieve, learn, retry</h4>
+            </div>
+            <span class="activity-chip">Fast but not shallow</span>
+          </div>
+          <div class="accelerator-method-grid">
+            <div><strong>1. Try first</strong><span>Attempt the task before opening help.</span></div>
+            <div><strong>2. Think</strong><span>Give yourself retrieval time instead of guessing immediately.</span></div>
+            <div><strong>3. Learn</strong><span>Use the concise explanation or video only when needed.</span></div>
+            <div><strong>4. Explain</strong><span>Say or write how the solution works.</span></div>
+            <div><strong>5. Retry</strong><span>Return to the task without copying the answer.</span></div>
+            <div><strong>6. Revisit</strong><span>Spaced practice brings the skill back before it fades.</span></div>
+          </div>
+        </div>
       </section>
 
       <section id="topicSummary" class="stats-grid"></section>
@@ -825,7 +846,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-2-0.js")
+    import("./app-v8-2-1.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -833,7 +854,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-2-0.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-2-1.js again."
           );
         }
       })
@@ -843,7 +864,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8-2-0.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-2-1.js again and make sure both filenames are exact."
         );
       });
   </script>

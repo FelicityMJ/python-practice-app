@@ -1,0 +1,563 @@
+{
+  "version": "8.2.1",
+  "sourceFiles": {
+    "python": "Nat5 Python Basic Skills.pptx",
+    "sql": "Nat5 SQL Basic Skills.pptx"
+  },
+  "acceleratorMethod": [
+    "Try the task first",
+    "Pause and retrieve before opening help",
+    "Use the video or explanation if still stuck",
+    "Explain the method or retrieve related flashcards",
+    "Retry without copying",
+    "Revisit through spaced practice"
+  ],
+  "pythonTasks": [
+    {
+      "sourceSlide": 2,
+      "prompt": "#Write a print statement to display the text Hello World.",
+      "answerSlide": 60,
+      "answer": "",
+      "videoSlide": 31,
+      "videoUrl": "http://drive.google.com/file/d/14zt8ODU5hX-cR9IeIAFEksPzAHALYZqt/view",
+      "pseudocodeSlide": 91,
+      "pseudocode": "SEND\n“Hello World”\nTO DISPLAY"
+    },
+    {
+      "sourceSlide": 3,
+      "prompt": "#Write an input statement asking the user their name and store their answer in a variable",
+      "answerSlide": 61,
+      "answer": "",
+      "videoSlide": 32,
+      "videoUrl": "http://drive.google.com/file/d/1Ufeh3kjoKb8L7Oen5pacKx0pIVzEAXqh/view",
+      "pseudocodeSlide": 92,
+      "pseudocode": "RECEIVE name FROM KEYBOARD AS STRING"
+    },
+    {
+      "sourceSlide": 4,
+      "prompt": "#Write an input statement asking the user their age and store their answer in a variable",
+      "answerSlide": 62,
+      "answer": "",
+      "videoSlide": 33,
+      "videoUrl": "http://drive.google.com/file/d/1JLs_qS6yNKohg_KtVbM2rhwHqVELhywC/view",
+      "pseudocodeSlide": 93,
+      "pseudocode": "RECEIVE age FROM KEYBOARD AS INTEGER"
+    },
+    {
+      "sourceSlide": 5,
+      "prompt": "#Use concatenation and print the sentence 'Your name is........and you are........years old pulling the user's name and age from the variables.",
+      "answerSlide": 63,
+      "answer": "",
+      "videoSlide": 34,
+      "videoUrl": "http://drive.google.com/file/d/1bHyTKJhXHqvYPFRZAKO1vVemC3gHV9lS/view",
+      "pseudocodeSlide": 94,
+      "pseudocode": "RECEIVE name FROM KEYBOARD AS STRING\nRECEIVE age FROM KEYBOARD AS INTEGER\nSEND [\n“Your name is ”\n& name &\n“ and you are ”\n& age &\n“ years old.”\n] TO DISPLAY"
+    },
+    {
+      "sourceSlide": 6,
+      "prompt": "#Write an input statement asking the user to enter the price of a product (remember could be a decimal)",
+      "answerSlide": 64,
+      "answer": "",
+      "videoSlide": 35,
+      "videoUrl": "http://drive.google.com/file/d/1roI452rkz5HtMHRyMADasI-lfba4acpW/view",
+      "pseudocodeSlide": 95,
+      "pseudocode": "RECEIVE price FROM KEYBOARD AS REAL"
+    },
+    {
+      "sourceSlide": 7,
+      "prompt": "#Write an if statement to check if their age is less than or equal to 18. If it is then tell the user they can get a child ticket. If not then they can purchase an adult ticket.",
+      "answerSlide": 65,
+      "answer": "",
+      "videoSlide": 36,
+      "videoUrl": "http://drive.google.com/file/d/1wM75IwbiVQKAssU5FeDFihfZYYSoxrZa/view",
+      "pseudocodeSlide": 96,
+      "pseudocode": "RECEIVE age FROM KEYBOARD AS INTEGER\nIF age <= 18 THEN\nSEND\n“You can get a child ticket”\nTO DISPLAY\nELSE\nSEND\n“You can get an adult ticket”\nTO DISPLAY\nEND IF"
+    },
+    {
+      "sourceSlide": 8,
+      "prompt": "#Write an if statement that checks if the user’s favorite subject is Computing. If it’s Computing display a message saying, Great choice! If it’s not then display a message saying Hmm, you sure?!?\n#Next write an if statement to check if their favorite subject is not Computing. If it’s not Computing then display a message saying Hmm, you sure?!? If it is Computing (since it’s not\nnot\nComputing), then display a message saying, Great choice!\n#Both tasks are doing the same thing, just in reverse!",
+      "answerSlide": 66,
+      "answer": "",
+      "videoSlide": 37,
+      "videoUrl": "http://drive.google.com/file/d/1dyNBXKi10cdm96NdEcEDq0SLbAYpxKzD/view",
+      "pseudocodeSlide": 97,
+      "pseudocode": "Method 1:\nRECEIVE subject FROM KEYBOARD AS STRING\nIF subject IS EQUAL TO\n“Computing”\nTHEN\nSEND\n“Great choice!”\nTO DISPLAY\nELSE\nSEND\n“Hmm, you sure?!?”\nTO DISPLAY\nEND IF\n—----------------------------------------------------------------\nMethod 2:\nRECEIVE subject FROM KEYBOARD AS STRING\nIF subject DOES NOT EQUAL\n“Computing”\nTHEN\nSEND\n“Hmm, you sure?!?”\nTO DISPLAY\nELSE\nSEND\n“Great choice!”\nTO DISPLAY\nEND IF"
+    },
+    {
+      "sourceSlide": 9,
+      "prompt": "#Set the cost of a ticket to 25. Ask how many tickets the user wants to buy. Calculate and print the total cost in a sentence.",
+      "answerSlide": 67,
+      "answer": "",
+      "videoSlide": 38,
+      "videoUrl": "http://drive.google.com/file/d/1j8kuL85PFUKN7A1TyHOm7G9zvVqWILVc/view",
+      "pseudocodeSlide": 98,
+      "pseudocode": "SET ticketPrice TO 25\nRECEIVE ticketAmount FROM KEYBOARD AS INTEGER\nSET totalCost TO ticketAmount * ticketPrice\nSEND [\n“Your total is ”\n& totalCost] TO DISPLAY"
+    },
+    {
+      "sourceSlide": 10,
+      "prompt": "#Ask the user their mark in the Chemistry test\n#If they got more than or equal to 70 then tell them they got an A\n#If they got between 60-69 then tell them they got a B\n#If they got between 50-59 then tell them they got a C\n#If they got less than 50 then tell them better luck next time",
+      "answerSlide": 68,
+      "answer": "",
+      "videoSlide": 39,
+      "videoUrl": "http://drive.google.com/file/d/1ABXyWSctA7N2FzuUe9UAGwgxZ9vUjg9D/view",
+      "pseudocodeSlide": 99,
+      "pseudocode": "RECEIVE chemistryMark FROM KEYBOARD AS REAL\nIF chemistryMark >= 70 THEN\nSEND\n“You got an A!”\nTO DISPLAY\nELSE IF chemistryMark >= 60 THEN\nSEND\n“You got a B!”\nTO DISPLAY\nELSE IF chemistryMark >= 50 THEN\nSEND\n“You got a C!”\nTO DISPLAY\nELSE\nSEND\n“Better luck next time”\nTO DISPLAY\nEND IF"
+    },
+    {
+      "sourceSlide": 11,
+      "prompt": "#Use a for loop to ask the user the names of their five friends",
+      "answerSlide": 69,
+      "answer": "",
+      "videoSlide": 40,
+      "videoUrl": "http://drive.google.com/file/d/1K_D5mqp60kpJxES3rlj3v7wvyi5iQuS8/view",
+      "pseudocodeSlide": 100,
+      "pseudocode": "REPEAT 5 TIMES\nRECEIVE friendName FROM KEYBOARD AS STRING\nEND REPEAT"
+    },
+    {
+      "sourceSlide": 12,
+      "prompt": "#Ask the user how many students sat the exam.\n#Use a for loop to ask for each student's grade (A, B, C….)",
+      "answerSlide": 70,
+      "answer": "",
+      "videoSlide": 41,
+      "videoUrl": "http://drive.google.com/file/d/1IdAGZzOs3qpheqIVphLvjpewQwotgTYI/view",
+      "pseudocodeSlide": 101,
+      "pseudocode": "RECEIVE studentNum FROM KEYBOARD AS INTEGER\nREPEAT studentNum TIMES\nRECEIVE studentGrade FROM KEYBOARD AS STRING\nEND REPEAT"
+    },
+    {
+      "sourceSlide": 13,
+      "prompt": "#Ask the user how many items they bought when out shopping\n#Keep a running total within a loop to calculate the total price",
+      "answerSlide": 71,
+      "answer": "",
+      "videoSlide": 42,
+      "videoUrl": "http://drive.google.com/file/d/1A5Gb7mXvBk2w5Xy1FpKHaSpgoZor6lyr/view",
+      "pseudocodeSlide": 102,
+      "pseudocode": "SET total TO 0\nRECEIVE itemsBought FROM KEYBOARD AS INTEGER\nREPEAT itemsBought TIMES\nRECEIVE itemPrice FROM KEYBOARD AS REAL\nSET total TO total + itemPrice\nEND REPEAT\nSEND total TO DISPLAY"
+    },
+    {
+      "sourceSlide": 14,
+      "prompt": "#Ask the user how many tickets they want to buy.\n#Keep a running total within a loop to calculate the total price. You will need to ask the user each time if it's a child ticket (5 pounds) or adult ticket (10 pounds).\n#(nested if within a for loop)",
+      "answerSlide": 72,
+      "answer": "",
+      "videoSlide": 43,
+      "videoUrl": "http://drive.google.com/file/d/1ARvOrsctarnWnAGbCxOB9uw9lWpwn9S0/view",
+      "pseudocodeSlide": 103,
+      "pseudocode": "SET total TO 0\nSET childTicket TO 5\nSET adultTicket TO 10\nRECEIVE ticketAmount FROM KEYBOARD AS INTEGER\nREPEAT ticketAmount TIMES\nRECEIVE ticketType FROM KEYBOARD AS STRING\nIF ticketType IS EQUAL TO\n“child”\nTHEN\nSET total TO total + childTicket\nELSE IF ticketType IS EQUAL TO\n“adult”\nTHEN\nSET total TO total + adultTicket\nEND IF\nEND REPEAT\nSEND total TO DISPLAY"
+    },
+    {
+      "sourceSlide": 15,
+      "prompt": "#Use input validation when asking the user to enter their Chemistry test result between 0-100",
+      "answerSlide": 73,
+      "answer": "METHOD 1\nMETHOD 2",
+      "videoSlide": 44,
+      "videoUrl": "http://drive.google.com/file/d/1WM7BcHPCYUuvLPbbLnJSTknfe7JH4JZL/view",
+      "pseudocodeSlide": 104,
+      "pseudocode": "Method 1:\nRECEIVE chemistryResult FROM KEYBOARD AS INTEGER\nWHILE chemistryResult < 0 OR chemistryResult > 100 DO\nSEND\n“Error invalid mark please enter again.”\nTO DISPLAY\nRECEIVE chemistryResult FROM KEYBOARD AS INTEGER\nEND WHILE\nMethod 2:\nRECEIVE chemistryResult FROM KEYBOARD AS INTEGER\nWHILE NOT(chemistryResult >= 0 AND chemistryResult <= 100) DO\nSEND\n“Error invalid mark please enter again.”\nTO DISPLAY\nRECEIVE chemistryResult FROM KEYBOARD AS INTEGER\nEND WHILE\nWhile not valid\nWhile not(what is valid)"
+    },
+    {
+      "sourceSlide": 16,
+      "prompt": "#Ask the user to choose a movie genre: 'A' for Action, 'C' for Comedy, or 'D' for Drama. If they enter anything else, keep asking until they provide a valid input.",
+      "answerSlide": 74,
+      "answer": "METHOD 1\nMETHOD 2",
+      "videoSlide": 45,
+      "videoUrl": "http://drive.google.com/file/d/1FQoa-TYlaHTbJDJx2eK2cornKnFNuzCR/view",
+      "pseudocodeSlide": 105,
+      "pseudocode": "Method 1:\nRECEIVE movieGenre FROM KEYBOARD AS STRING\nWHILE movieGenre NOT\n“A”\nAND movieGenre NOT\n“B”\nAND movieGenre NOT\n“C”\nDO\nSEND “Error! Invalid movie genre, please enter again” TO DISPLAY\nRECEIVE movieGenre FROM KEYBOARD AS STRING\nEND WHILE\nMethod 2:\nRECEIVE movieGenre FROM KEYBOARD AS STRING\nWHILE NOT(movieGenre =\n“A”\nOR movieGenre =\n“B”\nOR movieGenre =\n“C”)\nDO\nSEND “Error! Invalid movie genre, please enter again” TO DISPLAY\nRECEIVE movieGenre FROM KEYBOARD AS STRING\nEND WHILE"
+    },
+    {
+      "sourceSlide": 17,
+      "prompt": "#Code an array whose three elements are integers. Make up the name of the array and the integers.",
+      "answerSlide": 75,
+      "answer": "",
+      "videoSlide": 46,
+      "videoUrl": "http://drive.google.com/file/d/1PWjBLbL-PjR4FEQMtqG6d3EXSuGToeHs/view",
+      "pseudocodeSlide": 106,
+      "pseudocode": "SET wholeNumbers TO [1, 2, 3]"
+    },
+    {
+      "sourceSlide": 18,
+      "prompt": "#Code an array whose three elements are strings. Make up the name of the array and the strings.",
+      "answerSlide": 76,
+      "answer": "",
+      "videoSlide": 47,
+      "videoUrl": "http://drive.google.com/file/d/1qlKr4NsP2ILsv46iNE1IFvpQgvxqNmak/view",
+      "pseudocodeSlide": 107,
+      "pseudocode": "SET\nfruits\nTO [\n“apple”\n,\n“banana”\n,\n“kiwi”\n]"
+    },
+    {
+      "sourceSlide": 19,
+      "prompt": "#In a single line of code and using the array to specify the element, display \"maths\".\nsubjects= [\"computing\", \"chemistry\", \"English\", \"maths\", \"Chinese\", \"PE\"]",
+      "answerSlide": 77,
+      "answer": "",
+      "videoSlide": 48,
+      "videoUrl": "http://drive.google.com/file/d/1WlK6uDSupAYV-PbGvyrn_BtAza0zgAai/view",
+      "pseudocodeSlide": 108,
+      "pseudocode": "SET\nsubjects TO [“computing”, “chemistry”, “English”, “maths”, “Chinese”, “PE”]\nSEND subjects [3] TO DISPLAY"
+    },
+    {
+      "sourceSlide": 20,
+      "prompt": "#Create an array that stores the pocket money from each day one week (7 elements)\n#Keep a running total within a loop adding up the money from each entry in the array.",
+      "answerSlide": 78,
+      "answer": "Click for Method 2:",
+      "videoSlide": 49,
+      "videoUrl": "http://drive.google.com/file/d/1qJtFl0IDxrSF8NQ1I4CgBZxH1MtBA1Wi/view",
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 21,
+      "prompt": "#Create an empty array with five empty spots that will store song names for a playlist..\n#Use a for loop to enter the five song titles into the playlist array\n#Using a new for loop print the songs in the playlist one at a time",
+      "answerSlide": 80,
+      "answer": "",
+      "videoSlide": 50,
+      "videoUrl": "http://drive.google.com/file/d/1sV1s_S5i72tembQ6RraFqd7O4KMVJ08b/view",
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 22,
+      "prompt": "#Scenario: You are creating a new membership ID for an exclusive club.\n#The membership ID must be exactly 6 characters long to ensure it's easy to remember but still secure so you will need to use input validation.\n#Use the length function to check the length of the ID and prompt the user until they enter a valid one.",
+      "answerSlide": 81,
+      "answer": "",
+      "videoSlide": 51,
+      "videoUrl": "http://drive.google.com/file/d/1rupi9MBroBEOB-chmx8Ga7DVvM8k-d2p/view",
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 23,
+      "prompt": "#Write a program that generates a random prize number between 0 and 5 and displays a fun message based on the prize number.",
+      "answerSlide": 82,
+      "answer": "",
+      "videoSlide": 52,
+      "videoUrl": "http://drive.google.com/file/d/1CLhvy1Rtr9QtXWWWYaEWUVdMqS6REeeo/view",
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 24,
+      "prompt": "#Write a program that generates a random exercise from an array and displays it to the user.\n#Exercise surprise options: \"10 push-ups\", \"20 sit-ups\", \"15 squats\", \"30-second plank\", \"20 jumping jacks\", \"10 burpees\", \"15 lunges\", \"30-second high knees\", \"15 tricep dips\", \"20 mountain climbers\"",
+      "answerSlide": 83,
+      "answer": "It’s too small to see clearly so here’s a larger example by dropping some of the code to the next line.",
+      "videoSlide": 53,
+      "videoUrl": "http://drive.google.com/file/d/1IWKVPglm8nBCbaQh0hkQ-gM1D7F3AeMN/view",
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 25,
+      "prompt": "#Ask the user how many movies they want to add to the list.\n#Use a loop to let the user enter the names of each movie.\n#Store all the movie names in a list.\n#Randomly select one movie from the list and display it to the user.",
+      "answerSlide": 84,
+      "answer": "Click for Method 2:",
+      "videoSlide": 54,
+      "videoUrl": "http://drive.google.com/file/d/1GjnFiWRpqNXFqNaZRnqQ_-9fAIpqv2jw/view",
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 26,
+      "prompt": "#Write a program that asks for the price of 5 items, calculates the average, and rounds the result to 2dp.",
+      "answerSlide": 86,
+      "answer": "",
+      "videoSlide": 55,
+      "videoUrl": "http://drive.google.com/file/d/1UOxIk0vjrnF7vTxDyCLL4bH6UuhVKipR/view",
+      "pseudocodeSlide": 111,
+      "pseudocode": "SET total TO 0\nREPEAT 5 TIMES\nRECEIVE price FROM KEYBOARD AS REAL\nSET total TO total + price\nEND REPEAT\nSET average TO total/5\nSEND round(average, 2) TO DISPLAY"
+    },
+    {
+      "sourceSlide": 27,
+      "prompt": "#Scenario: Your school is planning an activities week, and students are encouraged to submit unique activity ideas.\n#Each activity idea must be between 5 and 30 characters long. Your task is to collect and validate these activity ideas and print out the list one by one.",
+      "answerSlide": 87,
+      "answer": "Click for Method 2:",
+      "videoSlide": 56,
+      "videoUrl": "http://drive.google.com/file/d/15pCXF1I0AdoXCpzBczWF6H5NAaChRnpD/view",
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 28,
+      "prompt": "#\nA library has a system to check if a book is available for borrowing. Each book is represented by a variable that stores whether it is available (True) or borrowed (False).\n#Write code to check if a book is available.\n#If the book is available, update its status to borrowed (False) and display a message: \"You have successfully borrowed the book.\"\n#\nIf the book is not available, display a message: \"Sorry, the book is currently not available.\"",
+      "answerSlide": 89,
+      "answer": "",
+      "videoSlide": 58,
+      "videoUrl": "http://drive.google.com/file/d/1BPfG71kY3LpKmdXM1KHxhV93bM-FjWUs/view",
+      "pseudocodeSlide": 113,
+      "pseudocode": "RECEIVE bookName FROM KEYBOARD AS STRING\nSET bookAvailable TO TRUE\nRECEIVE borrowDecision FROM KEYBOARD AS STRING\nIF borrowDecision =\n“yes”\nTHEN\nIF bookAvailable = TRUE THEN\nSET bookAvailable TO FALSE\nSEND [\n“You have successfully borrowed: ”\n& bookName &\n“.”\n] TO DISPLAY\nELSE\nSEND [\n“Sorry, ”\n& bookName &\n“ is currently not available.”\n] TO DISPLAY\nEND IF\nELSE IF borrowDecision =\n“no”\nTHEN\nSEND\n“Ok, maybe next time.”\nTO DISPLAY\nELSE\nSEND\n“Error”\nTO DISPLAY\nEND IF"
+    },
+    {
+      "sourceSlide": 29,
+      "prompt": "Click the Ticketmaster button to see the code for the Ticketmaster program: one program that includes all the Python skills you have learnt for Nat5. You can edit the code by selecting ‘Clone’.\n\\n forces a line break in the code. It makes it look nicer for the user\nI’ve made my own program\nI understand how it works\nI’ve read the code\nI don’t understand",
+      "answerSlide": null,
+      "answer": null,
+      "videoSlide": null,
+      "videoUrl": null,
+      "pseudocodeSlide": null,
+      "pseudocode": null
+    }
+  ],
+  "sqlTasks": [
+    {
+      "sourceSlide": 3,
+      "prompt": "Output all the details from the table.",
+      "answerSlide": 49,
+      "answer": "SELECT *\nFROM Golfer;\nBack\nto\nQuestion",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 4,
+      "prompt": "Output the full names of all the golfers.",
+      "answerSlide": 50,
+      "answer": "SELECT forename, surname\nFROM Golfer;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 6,
+      "prompt": "Output all the details of the senior golfers.",
+      "answerSlide": 51,
+      "answer": "SELECT *\nFROM Golfer\nWHERE age = “Senior”;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 7,
+      "prompt": "Output the Scottish Golf Numbers and club names of the junior golfers.",
+      "answerSlide": 52,
+      "answer": "SELECT scotGolfNo, club\nFROM Golfer\nWHERE age = “Junior”;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 8,
+      "prompt": "Output the forename and club of the golfers with a handicap of less than 6.",
+      "answerSlide": 53,
+      "answer": "SELECT forename, club\nFROM Golfer\nWHERE handicap < 6;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 9,
+      "prompt": "Output the movie name and certificate level for movies with a length of at least 110",
+      "answerSlide": 54,
+      "answer": "SELECT Name, Certificate\nFROM Movies\nWHERE Length >= 110;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 10,
+      "prompt": "Output the movie name and movie star for movies with a length of no more than 120.",
+      "answerSlide": 55,
+      "answer": "SELECT Name, Star\nFROM Movies\nWHERE Length <= 120;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 11,
+      "prompt": "Output the full names for those students whose first test scored over 50",
+      "answerSlide": 56,
+      "answer": "SELECT forename, surname\nFROM Result\nWHERE test1 > 50;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 12,
+      "prompt": "Output all the details for those students whose second test scored 90.",
+      "answerSlide": 57,
+      "answer": "SELECT *\nFROM Result\nWHERE test2 = 90;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 14,
+      "prompt": "Output all the details for those students who scored at least 50 in both tests.",
+      "answerSlide": 58,
+      "answer": "SELECT *\nFROM Result\nWHERE test1 >= 50 AND test2 >= 50;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 16,
+      "prompt": "Output all the details for those students who scored over 50 in at least one test.",
+      "answerSlide": 59,
+      "answer": "SELECT *\nFROM Result\nWHERE test1 > 50 OR test2 > 50;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 18,
+      "prompt": "This is a table for balloon orders.\nOutput all the details for the orders that requested personalise (field type = boolean). Order the results by collection date.",
+      "answerSlide": 60,
+      "answer": "SELECT *\nFROM Order\nWHERE personalise = True\nORDER BY collection ASC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 19,
+      "prompt": "This is a table for balloon orders. Output the order ID and price for the orders that requested a red balloon. Order the results by price in descending order.",
+      "answerSlide": 61,
+      "answer": "SELECT orderID, price\nFROM Order\nWHERE colour = “Red”\nORDER BY price DESC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 20,
+      "prompt": "This is a table for balloon orders. Output the order collection date and type of balloon for the orders that are of type Star. Order the results by order ID.",
+      "answerSlide": 62,
+      "answer": "SELECT collection, type\nFROM Order\nWHERE type = “Star”\nORDER BY OrderID ASC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 21,
+      "prompt": "This is a table for balloon orders. Output the order ID, type of balloon, and collection date. Order the results by type in descending order.",
+      "answerSlide": 63,
+      "answer": "SELECT orderID, type, collection\nFROM Order\nORDER BY type DESC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 23,
+      "prompt": "This is a run result from the table called contract. Write the SQL query that would produce this. It has two orders but no where. Exam questions like this normally have two orders, look carefully!",
+      "answerSlide": 64,
+      "answer": "SELECT contractCode, contractLength, phoneType, storage\nFROM contract\nORDER BY storage ASC, contractLength DESC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 24,
+      "prompt": "Output all the details from the table. Order by sessionBlock in descending order, then by time in ascending order.",
+      "answerSlide": 65,
+      "answer": "SELECT *\nFROM Class\nORDER BY sessionBlock DESC, time ASC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 25,
+      "prompt": "Output the names and studio IDs from the table for those characters that have over 10 appearances.  Order by name in ascending order and then by studio ID in descending order.",
+      "answerSlide": 66,
+      "answer": "SELECT name, studioID\nFROM Character\nWHERE appearances > 10\nORDER BY name ASC, studioID DESC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 27,
+      "prompt": "Output the character name and studioName from the tables.",
+      "answerSlide": 67,
+      "answer": "SELECT Character.name, Studio.studioName\nFROM\nCharacter, Studio\nWHERE\nCharacter\n.studioID =\nStudio\n.studioID;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 28,
+      "prompt": "Create an SQL query that uses an Equi join to display a list of each team along with the specific equipment they use. The result should show the team name and equipment name.",
+      "answerSlide": 71,
+      "answer": "SELECT [Teams Table].TeamName, [Equipment Table].EquipName\nFROM [Teams Table], [Equipment Table]\nWHERE [Teams Table].TeamID = [Equipment Table].TeamID",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 29,
+      "prompt": "Output the artist name and label name from the tables.",
+      "answerSlide": 68,
+      "answer": "SELECT Artists.name, Labels.labelName\nFROM Artists, Labels\nWHERE Artists.labelID = Labels.labelID;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 30,
+      "prompt": "Write an SQL query to output the forename, surname, age, and score from the tables for the members of Dundee Golf club. Order the results by handicap in descending order.",
+      "answerSlide": 69,
+      "answer": "SELECT Golfer.forename, Golfer.surname, Golfer.age, Result.score\nFROM Golfer, Result\nWHERE Golfer. club = “Dundee Golf Club” AND Golfer.scotGolfNo = Result.scotGolfNo\nORDER BY Golfer.handicap DESC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 31,
+      "prompt": "Write an SQL query to output the forename, surname, and match type from the tables for the matches with a score of over 70. Order the results by match type and then by year in descending order.",
+      "answerSlide": 70,
+      "answer": "SELECT Golfer.forename, Golfer.surname, Result.matchType\nFROM Golfer, Result\nWHERE Result.score > 70 AND Golfer.scotGolfNo = Result.scotGolfNo\nORDER BY Result.matchType ASC, Result.year DESC;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 33,
+      "prompt": "Add a new book with ID B003, \"The Great Gatsby\" by F. Scott Fitzgerald, published in 1925, and categorised under the genre \"Fiction.\"",
+      "answerSlide": 72,
+      "answer": "INSERT INTO Books\nVALUES (“B003”, “The Great Gatsby”, “F.Scott Fitzgerald”, 1960, “Fiction”);",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 34,
+      "prompt": "Add a new artist to the table. Add Billie Eilis, ID A003, with genre Pop.",
+      "answerSlide": 74,
+      "answer": "INSERT INTO Artists\nVALUES (“A003”, “Billie Eilis”, “Pop”);",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 36,
+      "prompt": "Add a new swimmer with swimming ID S003, \"Emma McKeon,\" to the database. You have her TeamID (T102), but her stroke specialty is currently undecided so leave that field blank.",
+      "answerSlide": 73,
+      "answer": "INSERT INTO Swimmers (SwimmerID, SwimmerName, TeamID)\nVALUES (“S003”, “Emma McKeon”, “T102”);",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 37,
+      "prompt": "Add a new artist to the table.\nAdd Ed Sheeran, ID A004, without specifying the genre.",
+      "answerSlide": 75,
+      "answer": "INSERT INTO Artists (ArtistID, ArtistName)\nVALUES (“A004”, “Ed Sheeran”);",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 39,
+      "prompt": "The class originally scheduled in Room 101 needs to be moved to Room 202 because the assigned teacher is absent. Update the table using an SQL update statement.",
+      "answerSlide": 76,
+      "answer": "UPDATE ClassSchedule\nSET RoomNumber = “Room 202”\nWHERE ClassID = C001;\nTip: The\nstructure of an UPDATE statement for a single record is:\nUPDATE tablename\nSET fieldName = new value\nWHERE primaryKeyFieldName = primaryKeyValue;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 40,
+      "prompt": "The Olympic canteen needs to adjust its inventory after a popular athlete, known as \"the Muffin Man\" on social media, bought an unusually large quantity of chocolate muffins, causing a spike in demand and subsequently depleting the stock faster than anticipated. Write an SQL UPDATE statement to decrease the quantity of \"Chocolate Muffin\" by 100 units due to high demand influenced by the athlete's purchases.",
+      "answerSlide": 77,
+      "answer": "UPDATE CanteenInventory\nSET Quantity = 20\nWHERE ItemID = “CI002”;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 42,
+      "prompt": "Several ski competition events have had their dates changed because there wasn't enough fresh snow. Write an SQL UPDATE statement to change the event dates for all the competitions originally planned for the 12/02/2024 to the later date of 25/02/2024.",
+      "answerSlide": 78,
+      "answer": "UPDATE SkiCompetitions\nSET EventDate = #25/02/2024#\nWHERE EventDate = #12/02/2024#;\nTip:\nNotice this time we didn’t identify the fields to change using the primary key because we wanted to change multiple records. The structure is:\nUPDATE tableName\nSET fieldname = newValue\nWHERE fieldname = oldValue;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 44,
+      "prompt": "Instructor SUP01 is leaving, and all of their classes (Beginner Waves and Sunset Paddle) will now be taught by Instructor SUP03. Update the instructor for all classes originally taught by Instructor SUP01 to Instructor SUP03 and adjust the MaxParticipants for these classes to 10.",
+      "answerSlide": 79,
+      "answer": "UPDATE SUPClasses\nSET InstructorID= “SUP03”, MaxParticipants = 10\nWHERE InstructorID= “SUP01”;",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 46,
+      "prompt": "The \"Soccer\" event scheduled for 18/06/2024 has been cancelled, and you need to remove it from the SportsEvents table below. Create an SQL Delete statement.",
+      "answerSlide": 80,
+      "answer": "DELETE FROM SportsEvents\nWHERE EventID = “EV002”;\nTip:\nWe use DELETE Statements to delete whole rows/records. IMPORTANT: You must specify exactly which record to delete or it will delete all the records! Unless you actually want to delete everything. It’s a good idea to use the primary key here to make sure we only delete that one row/record.",
+      "videoUrl": null,
+      "pseudocode": null
+    },
+    {
+      "sourceSlide": 47,
+      "prompt": "The activity \"Stroll Through Duthie Park\" has been temporarily removed due to renovations. Write a SQL DELETE statement to remove the activity \"Stroll Through Duthie Park\" from t\nhe AberdeenActivities table.",
+      "answerSlide": 81,
+      "answer": "DELETE FROM AberdeenActivities\nWHERE ActivityID = “A002”;",
+      "videoUrl": null,
+      "pseudocode": null
+    }
+  ]
+}
