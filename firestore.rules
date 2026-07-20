@@ -1,0 +1,406 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isTeacher() {
+      return signedIn()
+        && userProfile().data.role == "teacher";
+    }
+
+    function isStudentInClass(classId) {
+      return signedIn()
+        && userProfile().data.role == "student"
+        && userProfile().data.classId == classId;
+    }
+
+    function hasActiveNat5Entitlement(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && exists(/databases/$(database)/documents/users/$(userId)/entitlements/nat5-computing)
+        && get(/databases/$(database)/documents/users/$(userId)/entitlements/nat5-computing).data.status == "active"
+        && (
+          (
+            get(/databases/$(database)/documents/users/$(userId)/entitlements/nat5-computing).data.keys().hasAll(["permanent"])
+            && get(/databases/$(database)/documents/users/$(userId)/entitlements/nat5-computing).data.permanent == true
+          )
+          || (
+            get(/databases/$(database)/documents/users/$(userId)/entitlements/nat5-computing).data.keys().hasAll(["endsAt"])
+            && get(/databases/$(database)/documents/users/$(userId)/entitlements/nat5-computing).data.endsAt > request.time
+          )
+        );
+    }
+
+    function isIndependentStudent() {
+      return signedIn()
+        && userProfile().data.role == "student"
+        && userProfile().data.accountType == "individual"
+        && hasActiveNat5Entitlement(request.auth.uid);
+    }
+
+    function isIndependentScope(classId) {
+      return isIndependentStudent()
+        && classId == "individual_" + request.auth.uid;
+    }
+
+    function canStudentUseScope(classId) {
+      return isStudentInClass(classId) || isIndependentScope(classId);
+    }
+
+    function isClassOwner(classId) {
+      return isTeacher()
+        && exists(/databases/$(database)/documents/classes/$(classId))
+        && get(/databases/$(database)/documents/classes/$(classId)).data.ownerId == request.auth.uid;
+    }
+
+    function validJoinCode(classId, code) {
+      return exists(/databases/$(database)/documents/joinCodes/$(code))
+        && get(/databases/$(database)/documents/joinCodes/$(code)).data.active == true
+        && get(/databases/$(database)/documents/joinCodes/$(code)).data.classId == classId;
+    }
+
+    match /teacherInvites/{email} {
+      allow get: if signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == email.lower();
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn() && request.auth.uid == userId;
+
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && (
+          (
+            request.resource.data.role == "student"
+            && request.auth.token.firebase.sign_in_provider == "password"
+            && request.resource.data.classId is string
+            && request.resource.data.joinCode is string
+            && validJoinCode(
+              request.resource.data.classId,
+              request.resource.data.joinCode
+            )
+          )
+          ||
+          (
+            request.resource.data.role == "teacher"
+            && request.auth.token.firebase.sign_in_provider == "google.com"
+            && request.auth.token.email != null
+            && exists(
+              /databases/$(database)/documents/teacherInvites/$(request.auth.token.email.lower())
+            )
+            && get(
+              /databases/$(database)/documents/teacherInvites/$(request.auth.token.email.lower())
+            ).data.active == true
+          )
+        );
+
+      allow update, delete: if false;
+
+      match /entitlements/{courseId} {
+        allow get: if signedIn() && request.auth.uid == userId;
+        allow list: if false;
+
+        // Complimentary grants are created manually in Firebase Console for now.
+        // Paid grants will later be written by trusted Cloud Functions on Blaze.
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /classes/{classId} {
+      allow create: if isTeacher()
+        && request.resource.data.ownerId == request.auth.uid;
+
+      allow get: if signedIn()
+        && (
+          resource.data.ownerId == request.auth.uid
+          || isStudentInClass(classId)
+        );
+
+      allow list: if isTeacher()
+        && resource.data.ownerId == request.auth.uid;
+
+      allow update, delete: if isTeacher()
+        && resource.data.ownerId == request.auth.uid;
+
+
+      match /peerReviews/{reviewId} {
+        function reviewerProgress() {
+          return get(/databases/$(database)/documents/progress/$(classId + "_" + request.auth.uid + "_" + resource.data.activityId));
+        }
+
+        function eligiblePeerReviewer() {
+          return isStudentInClass(classId)
+            && resource.data.authorId != request.auth.uid
+            && exists(/databases/$(database)/documents/progress/$(classId + "_" + request.auth.uid + "_" + resource.data.activityId))
+            && reviewerProgress().data.submitted == true;
+        }
+
+        allow create: if isStudentInClass(classId)
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.classId == classId
+          && request.resource.data.status == "queued"
+          && request.resource.data.reviewerId == ""
+          && request.resource.data.activityId is string;
+
+        allow get, list: if isClassOwner(classId)
+          || (signedIn() && resource.data.authorId == request.auth.uid)
+          || (signedIn() && resource.data.reviewerId == request.auth.uid)
+          || (resource.data.status == "queued" && eligiblePeerReviewer());
+
+        allow update: if isClassOwner(classId)
+          || (
+            resource.data.status == "queued"
+            && resource.data.reviewerId == ""
+            && eligiblePeerReviewer()
+            && request.resource.data.status == "assigned"
+            && request.resource.data.reviewerId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "reviewerId", "assignedAt"])
+          )
+          || (
+            resource.data.status == "assigned"
+            && resource.data.reviewerId == request.auth.uid
+            && request.resource.data.status == "completed"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "peerSuggestedMark", "greenTokenIndexes", "redTokenIndexes", "missedPointIndexes", "completedAt"])
+          )
+          || (
+            resource.data.status == "completed"
+            && resource.data.authorId == request.auth.uid
+            && request.resource.data.status == "finalised"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "finalMark", "authorDecision", "finalisedAt"])
+          );
+
+        allow delete: if isClassOwner(classId);
+      }
+
+      match /members/{memberId} {
+        allow get, list: if (signedIn() && request.auth.uid == memberId)
+          || isClassOwner(classId);
+
+        allow create: if signedIn()
+          && request.auth.uid == memberId
+          && request.resource.data.userId == memberId
+          && request.resource.data.role == "student"
+          && request.resource.data.joinCode is string
+          && validJoinCode(classId, request.resource.data.joinCode);
+
+        allow update, delete: if isClassOwner(classId);
+      }
+    }
+
+    match /joinCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if isTeacher()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.classId is string
+        && get(
+          /databases/$(database)/documents/classes/$(request.resource.data.classId)
+        ).data.ownerId == request.auth.uid;
+
+      allow update, delete: if isTeacher()
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /progress/{progressId} {
+      allow get, list: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isClassOwner(resource.data.classId)
+        );
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId is string
+        && request.resource.data.taskId is string
+        && canStudentUseScope(request.resource.data.classId);
+
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId == resource.data.classId
+        && request.resource.data.taskId == resource.data.taskId
+        && canStudentUseScope(resource.data.classId);
+
+      allow delete: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isClassOwner(resource.data.classId)
+        );
+    }
+
+    match /preferences/{userId} {
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow list: if false;
+
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(["userId", "errorMode", "learningRoute", "updatedAt"])
+        && (
+          !request.resource.data.keys().hasAny(["errorMode"])
+          || request.resource.data.errorMode in ["standard", "friendly"]
+        )
+        && (
+          !request.resource.data.keys().hasAny(["learningRoute"])
+          || request.resource.data.learningRoute in ["full-course", "exam-accelerator"]
+        );
+
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /customActivities/{activityId} {
+      // Pupils can read published content. Teachers can read content they own.
+      // The app queries published items for the teacher who owns the pupil's class.
+      allow get: if signedIn()
+        && (
+          resource.data.published == true
+          || (isTeacher() && resource.data.ownerId == request.auth.uid)
+        );
+
+      // Supported list queries:
+      // teacher: where ownerId == signed-in teacher uid
+      // pupil:   where ownerId == class teacher uid AND published == true
+      allow list: if signedIn()
+        && (
+          resource.data.published == true
+          || (isTeacher() && resource.data.ownerId == request.auth.uid)
+        );
+
+      allow create: if isTeacher()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.areaId == "sdd"
+        && request.resource.data.unitId is string
+        && request.resource.data.type in ["video", "official-paper"]
+        && request.resource.data.title is string;
+
+      allow update: if isTeacher()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid;
+
+      allow delete: if isTeacher()
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+
+
+
+    match /gameAttempts/{attemptId} {
+      allow create: if signedIn()
+        && userProfile().data.role == "student"
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId is string
+        && canStudentUseScope(request.resource.data.classId)
+        && request.resource.data.game in ["debug-rescue", "logic-showdown"]
+        && request.resource.data.challengeId is string
+        && request.resource.data.skillIds is list;
+
+      allow get, list: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isClassOwner(resource.data.classId)
+        );
+
+      allow update: if false;
+      allow delete: if isClassOwner(resource.data.classId);
+    }
+
+    match /reviewAttempts/{attemptId} {
+      allow create: if signedIn()
+        && userProfile().data.role == "student"
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId is string
+        && canStudentUseScope(request.resource.data.classId)
+        && request.resource.data.questionId is string;
+
+      allow get, list: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isClassOwner(resource.data.classId)
+        );
+
+      allow update, delete: if false;
+    }
+
+    match /reviewStates/{stateId} {
+      allow create, update: if signedIn()
+        && userProfile().data.role == "student"
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId is string
+        && canStudentUseScope(request.resource.data.classId)
+        && request.resource.data.skillId is string;
+
+      allow get, list: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isClassOwner(resource.data.classId)
+        );
+
+      allow delete: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isClassOwner(resource.data.classId)
+        );
+    }
+
+    match /reviewSessions/{sessionId} {
+      allow create: if signedIn()
+        && userProfile().data.role == "student"
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId is string
+        && canStudentUseScope(request.resource.data.classId);
+
+      allow get, list: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isClassOwner(resource.data.classId)
+        );
+
+      allow update, delete: if false;
+    }
+
+    match /reviewQuestionStats/{statId} {
+      // A transaction must read the deterministic statistics document before
+      // it can create it. Specific documents contain anonymous class totals
+      // only, so authenticated users may perform that single-document read.
+      // Collection queries remain restricted to the pupil's own class or its teacher.
+      allow get: if signedIn();
+
+      allow list: if signedIn()
+        && (
+          canStudentUseScope(resource.data.classId)
+          || isClassOwner(resource.data.classId)
+        );
+
+      allow create: if signedIn()
+        && userProfile().data.role == "student"
+        && request.resource.data.classId is string
+        && canStudentUseScope(request.resource.data.classId)
+        && request.resource.data.questionId is string
+        && request.resource.data.attempts == 1
+        && request.resource.data.correct in [0, 1];
+
+      allow update: if signedIn()
+        && userProfile().data.role == "student"
+        && canStudentUseScope(resource.data.classId)
+        && request.resource.data.classId == resource.data.classId
+        && request.resource.data.questionId == resource.data.questionId
+        && request.resource.data.attempts == resource.data.attempts + 1
+        && request.resource.data.correct >= resource.data.correct
+        && request.resource.data.correct <= resource.data.correct + 1;
+
+      allow delete: if isClassOwner(resource.data.classId);
+    }
+
+  }
+}

@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Complete National 5 Software Design and Development pathway with Python, design, testing and exam practice">
-  <title>Python Practice</title>
-  <link rel="stylesheet" href="styles.css?v=8.0">
+  <meta name="description" content="Complete National 5 Computing Science learning, practice and exam preparation for Scottish pupils and schools">
+  <title>Nat 5 Computing</title>
+  <link rel="stylesheet" href="styles.css?v=8.2">
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.js"></script>
 </head>
 <body>
   <header class="topbar">
     <div>
-      <h1>Python Practice</h1>
-      <p id="headerSubtitle">Learn in order, practise, visualise and prepare for the exam</p>
+      <h1>Nat 5 Computing</h1>
+      <p id="headerSubtitle">Learn the full course or accelerate towards the exam</p>
     </div>
     <div id="signedInControls" class="signed-in-controls hidden">
       <span id="currentUserLabel"></span>
@@ -27,7 +27,7 @@
     <section id="authView">
       <div class="hero card">
         <h2>Welcome</h2>
-        <p>Teachers can create classes and view progress. Pupils can join with a class code and continue on any device.</p>
+        <p>Schools can manage whole classes. Individual pupils can use a personal study licence and keep their own progress.</p>
       </div>
 
       <div class="auth-grid">
@@ -77,6 +77,22 @@
             <p class="help-text">Use at least 8 characters. Do not reuse a school or personal password.</p>
           </form>
         </section>
+
+        <section class="card">
+          <h2>Individual learner</h2>
+          <p>Sign in with the personal email and password attached to your individual study licence.</p>
+          <form id="individualLoginForm">
+            <label>Email address
+              <input id="individualLoginEmail" type="email" autocomplete="email" required>
+            </label>
+            <label>Password
+              <input id="individualLoginPassword" type="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit">Sign in to individual study</button>
+            <button id="individualResetPasswordButton" type="button" class="secondary">Send password-reset email</button>
+          </form>
+          <p class="help-text">Founding complimentary accounts are created by the site administrator. Public purchasing will be added at launch.</p>
+        </section>
       </div>
     </section>
 
@@ -91,6 +107,15 @@
           <button id="showCreateClassButton">Create class</button>
         </div>
       </div>
+
+      <section id="teacherLicenceStatusCard" class="card licence-status-card">
+        <div>
+          <p class="eyebrow">Teacher access</p>
+          <h3 id="teacherLicenceStatusTitle">School pilot access</h3>
+          <p id="teacherLicenceStatusText">Your approved teacher account can create and manage classes.</p>
+        </div>
+        <span id="teacherLicenceStatusBadge" class="status-pill complete">Active</span>
+      </section>
 
       <section id="createClassPanel" class="card hidden">
         <h3>Create a class</h3>
@@ -366,6 +391,36 @@
         </div>
         <div id="pupilProgressBadge" class="progress-badge"></div>
       </div>
+
+      <section id="licenceStatusCard" class="card licence-status-card">
+        <div>
+          <p class="eyebrow">Course access</p>
+          <h3 id="licenceStatusTitle">Nat 5 Computing</h3>
+          <p id="licenceStatusText"></p>
+        </div>
+        <span id="licenceStatusBadge" class="status-pill complete"></span>
+      </section>
+
+      <section class="learning-route-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Choose your learning route</p>
+            <h3>One course, two ways to study</h3>
+          </div>
+        </div>
+        <div class="learning-route-grid">
+          <button id="fullCourseRouteButton" type="button" class="learning-route-card active">
+            <span class="route-icon">📚</span>
+            <span><strong>Full Course</strong><small>Carefully sequenced teaching, practice and mastery.</small></span>
+          </button>
+          <button id="examAcceleratorRouteButton" type="button" class="learning-route-card">
+            <span class="route-icon">⚡</span>
+            <span><strong>Exam Accelerator</strong><small>Rapid, deep coverage with essential practice and exam questions.</small></span>
+          </button>
+        </div>
+        <div id="learningRouteNotice" class="route-notice"></div>
+      </section>
+
       <section id="topicSummary" class="stats-grid"></section>
 
       <section id="spacedPracticeCard" class="card spaced-practice-card">
@@ -733,7 +788,7 @@
   </div>
 
   <footer>
-    <p>Python Practice prototype v8.1.2 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Nat 5 Computing prototype v8.2.0 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -770,7 +825,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-1-2.js")
+    import("./app-v8-2-0.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -778,17 +833,17 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-1-2.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-2-0.js again."
           );
         }
       })
       .catch(function (error) {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
-        console.error("Python Practice failed to start:", error);
+        console.error("Nat 5 Computing failed to start:", error);
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-2-0.js again and make sure both filenames are exact."
         );
       });
   </script>

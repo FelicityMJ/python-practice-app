@@ -1318,3 +1318,59 @@ button.good { background:#237b57; color:#fff; }
   background: #eee8ff;
   color: #4d2ea1;
 }
+
+/* Nat 5 Computing v8.2: individual licences and learning routes */
+.licence-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.licence-status-card h3,
+.licence-status-card p { margin-top: 0; }
+.licence-status-card p:last-child { margin-bottom: 0; }
+.learning-route-section { margin: 1rem 0 1.25rem; }
+.learning-route-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.learning-route-card {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  width: 100%;
+  padding: 1rem;
+  text-align: left;
+  border: 2px solid var(--border, #d8dee8);
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  color: inherit;
+  box-shadow: none;
+}
+.learning-route-card:hover { transform: translateY(-1px); }
+.learning-route-card.active {
+  border-color: var(--primary, #2356c4);
+  box-shadow: 0 0 0 3px rgba(35, 86, 196, .12);
+}
+.learning-route-card strong,
+.learning-route-card small { display: block; }
+.learning-route-card small { margin-top: .25rem; line-height: 1.4; opacity: .78; }
+.route-icon { font-size: 1.8rem; }
+.route-notice {
+  margin-top: .8rem;
+  padding: .8rem 1rem;
+  border-radius: 12px;
+  background: rgba(35, 86, 196, .07);
+  line-height: 1.5;
+}
+.route-notice.accelerator { background: rgba(230, 126, 34, .10); }
+.accelerator-route .unit-card { border-left: 4px solid #e67e22; }
+.accelerator-route .activity-row:not(.locked) .activity-chip:first-child::after {
+  content: " · Accelerator";
+}
+@media (max-width: 760px) {
+  .learning-route-grid { grid-template-columns: 1fr; }
+  .licence-status-card { align-items: flex-start; flex-direction: column; }
+}
