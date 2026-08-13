@@ -246,7 +246,7 @@ service cloud.firestore {
       allow create, update: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasOnly(["userId", "errorMode", "learningRoute", "updatedAt"])
+        && request.resource.data.keys().hasOnly(["userId", "errorMode", "learningRoute", "masteryPlacement", "updatedAt"])
         && (
           !request.resource.data.keys().hasAny(["errorMode"])
           || request.resource.data.errorMode in ["standard", "friendly"]

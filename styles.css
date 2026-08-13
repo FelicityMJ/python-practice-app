@@ -1481,3 +1481,91 @@ button.good { background:#237b57; color:#fff; }
 @media (max-width: 760px) {
   .accelerator-practical-grid { grid-template-columns: 1fr; }
 }
+
+/* v8.3.0 — Daily Mastery */
+.learning-route-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mastery-route-card { border-style: solid; }
+.mastery-dashboard-heading { align-items: flex-start; }
+.mastery-level-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.mastery-level-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.mastery-level-card h3 { margin: .1rem 0 .2rem; font-size: 2rem; }
+.mastery-level-card p { margin-top: .2rem; }
+.mastery-level-icon { font-size: 2rem; line-height: 1; }
+.mastery-diagnostic-card,
+.daily-plan-card { margin-top: 1rem; }
+.mastery-diagnostic-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+.diagnostic-button-row { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: flex-end; }
+.daily-mastery-mix {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+  margin: 1rem 0;
+}
+.daily-mastery-mix > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: .6rem;
+  align-items: center;
+  padding: .8rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+.daily-mastery-mix > div span { grid-row: span 2; font-size: 1.5rem; }
+.daily-mastery-mix > div strong { font-size: 1.3rem; }
+.daily-mastery-mix > div small { color: var(--muted); }
+.daily-mastery-recommendation {
+  display: grid;
+  gap: .25rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+.daily-mastery-recommendation .activity-chip { width: max-content; }
+.daily-mastery-recommendation small { color: var(--muted); }
+.mastery-next-step,
+.diagnostic-result {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 1rem 0;
+}
+.diagnostic-result { display: flex; gap: 1rem; align-items: flex-start; }
+.diagnostic-result h2 { margin: .1rem 0; font-size: 2.3rem; }
+.diagnostic-result h3 { margin-top: .2rem; }
+.mastery-map-v83 .level-column { min-width: 70px; }
+.mastery-level-cell {
+  font-weight: 800;
+  white-space: nowrap;
+  border-radius: 8px !important;
+  background: #f5f7fa !important;
+  padding: .45rem !important;
+}
+.mastery-level-cell.has-repair { background: #fff1f0 !important; }
+.activity-row .retained { font-weight: 800; }
+
+@media (max-width: 900px) {
+  .learning-route-grid,
+  .mastery-level-grid { grid-template-columns: 1fr; }
+  .mastery-diagnostic-card { grid-template-columns: 1fr; }
+  .diagnostic-button-row { justify-content: flex-start; }
+  .daily-mastery-mix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .daily-mastery-mix { grid-template-columns: 1fr; }
+}

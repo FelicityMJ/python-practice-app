@@ -282,8 +282,8 @@
 
         <div class="subsection-heading teacher-insights-heading">
           <div>
-            <h4>Skill mastery heatmap</h4>
-            <p class="help-text">Green is secure, orange is developing, red needs support and grey means no or limited evidence.</p>
+            <h4>Mastery map</h4>
+            <p class="help-text">Working levels sit beside skill evidence. Retained skills have survived delayed retrieval; repair skills were previously learned but now need attention.</p>
           </div>
           <div class="heatmap-controls">
             <label>Skills
@@ -305,9 +305,9 @@
           </div>
         </div>
         <div class="heatmap-legend" aria-label="Mastery heatmap legend">
-          <span><i class="mastery-key mastery-green">✓</i> Secure</span>
+          <span><i class="mastery-key mastery-green">✓</i> Mastered / retained</span>
           <span><i class="mastery-key mastery-orange">~</i> Developing</span>
-          <span><i class="mastery-key mastery-red">!</i> Needs support</span>
+          <span><i class="mastery-key mastery-red">!</i> Repair</span>
           <span><i class="mastery-key mastery-grey">—</i> No or limited evidence</span>
         </div>
         <div id="masteryHeatmapContainer" class="mastery-heatmap-wrap"></div>
@@ -409,7 +409,7 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Choose your learning route</p>
-            <h3>One course, two ways to study</h3>
+            <h3>One course, three ways to study</h3>
           </div>
         </div>
         <div class="learning-route-grid">
@@ -420,6 +420,10 @@
           <button id="examAcceleratorRouteButton" type="button" class="learning-route-card">
             <span class="route-icon">⚡</span>
             <span><strong>Exam Accelerator</strong><small>Rapid, deep coverage with essential practice and exam questions.</small></span>
+          </button>
+          <button id="dailyMasteryRouteButton" type="button" class="learning-route-card mastery-route-card">
+            <span class="route-icon">🎯</span>
+            <span><strong>Daily Mastery</strong><small>10–15 minutes chosen for you: old + due + weak + new.</small></span>
           </button>
         </div>
         <div id="learningRouteNotice" class="route-notice"></div>
@@ -501,6 +505,91 @@
       </section>
     </section>
 
+
+
+    <section id="dailyMasteryView" class="hidden">
+      <button id="backFromDailyMasteryButton" class="secondary">← Back to dashboard</button>
+      <div class="dashboard-heading mastery-dashboard-heading">
+        <div>
+          <p class="eyebrow">Daily Mastery</p>
+          <h2>Make me genuinely fluent at Computing Science.</h2>
+          <p>Short prescribed practice based on what you know, what is due, what needs repair and what you are ready to learn next.</p>
+        </div>
+        <span id="dailyMasteryTimeBadge" class="progress-badge">10–15 min</span>
+      </div>
+
+      <section class="mastery-level-grid" id="masteryLevelGrid"></section>
+
+      <section id="masteryDiagnosticCard" class="card mastery-diagnostic-card">
+        <div>
+          <p class="eyebrow">Adaptive starting diagnostic</p>
+          <h3>Start at the right level</h3>
+          <p id="masteryDiagnosticSummary">A short adaptive check places Python, SQL and Computer Systems independently. You can retake any area later.</p>
+        </div>
+        <div class="diagnostic-button-row">
+          <button id="diagnosticPythonButton" type="button" class="secondary">Python diagnostic</button>
+          <button id="diagnosticSqlButton" type="button" class="secondary">SQL diagnostic</button>
+          <button id="diagnosticCsButton" type="button" class="secondary">Computer Systems diagnostic</button>
+        </div>
+      </section>
+
+      <section id="dailyMasteryPlanCard" class="card daily-plan-card">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Today's prescription</p>
+            <h3 id="dailyMasteryPlanTitle">Build today's practice</h3>
+            <p id="dailyMasteryPlanDescription" class="help-text"></p>
+          </div>
+          <button id="rebuildDailyMasteryButton" type="button" class="secondary small">Refresh plan</button>
+        </div>
+        <div id="dailyMasteryMix" class="daily-mastery-mix"></div>
+        <div id="dailyMasteryRecommendation" class="daily-mastery-recommendation"></div>
+        <div class="activity-actions"><button id="startDailyMasteryButton" type="button">Start today's mastery</button></div>
+      </section>
+
+      <section id="dailyMasteryQuestionCard" class="card hidden">
+        <div class="challenge-heading">
+          <div><p class="eyebrow">Daily Mastery practice</p><h3 id="dailyMasteryQuestionTitle">Retrieval</h3></div>
+          <span id="dailyMasteryProgress" class="progress-badge">1/8</span>
+        </div>
+        <div id="dailyMasteryQuestionMeta" class="spaced-question-meta"></div>
+        <div id="dailyMasteryQuestionCode" class="hidden"></div>
+        <fieldset class="question-block">
+          <legend id="dailyMasteryQuestionPrompt"></legend>
+          <div id="dailyMasteryQuestionOptions"></div>
+        </fieldset>
+        <label>How confident are you?
+          <select id="dailyMasteryConfidenceInput">
+            <option value="1">Not sure</option><option value="2" selected>Fairly sure</option><option value="3">Very sure</option>
+          </select>
+        </label>
+        <div class="activity-actions">
+          <button id="submitDailyMasteryAnswerButton" type="button">Check answer</button>
+          <button id="nextDailyMasteryQuestionButton" type="button" class="secondary hidden">Next question</button>
+        </div>
+        <div id="dailyMasteryFeedback" class="feedback hidden" aria-live="polite"></div>
+      </section>
+
+      <section id="dailyMasterySummaryCard" class="card hidden"></section>
+    </section>
+
+    <section id="masteryDiagnosticView" class="hidden">
+      <button id="backFromMasteryDiagnosticButton" class="secondary">← Back to Daily Mastery</button>
+      <section class="card diagnostic-shell">
+        <div class="challenge-heading">
+          <div><p class="eyebrow">Adaptive placement</p><h2 id="diagnosticTitle">Starting diagnostic</h2><p class="help-text">Questions move up or down automatically. This is a placement check, not an exam.</p></div>
+          <span id="diagnosticProgress" class="progress-badge">Ready</span>
+        </div>
+        <div id="diagnosticQuestionPanel">
+          <div id="diagnosticQuestionMeta" class="spaced-question-meta"></div>
+          <div id="diagnosticQuestionCode" class="hidden"></div>
+          <fieldset class="question-block"><legend id="diagnosticQuestionPrompt"></legend><div id="diagnosticQuestionOptions"></div></fieldset>
+          <div class="activity-actions"><button id="submitDiagnosticAnswerButton" type="button">Check answer</button><button id="nextDiagnosticQuestionButton" type="button" class="secondary hidden">Next question</button></div>
+          <div id="diagnosticFeedback" class="feedback hidden" aria-live="polite"></div>
+        </div>
+        <div id="diagnosticSummaryPanel" class="hidden"></div>
+      </section>
+    </section>
 
 
     <section id="gamesView" class="hidden">
@@ -819,7 +908,7 @@
   </div>
 
   <footer>
-    <p>Nat 5 Computing prototype v8.2.2 · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Nat 5 Computing prototype v8.3.0 · Mastery Edition · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -856,7 +945,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-2-2.js")
+    import("./app-v8-3-0.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -864,7 +953,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-2-2.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-3-0.js again."
           );
         }
       })
@@ -874,7 +963,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8-2-2.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-3-0.js again and make sure both filenames are exact."
         );
       });
   </script>
