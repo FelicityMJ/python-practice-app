@@ -16,8 +16,15 @@ service cloud.firestore {
         && userProfile().data.role == "teacher";
     }
 
+    function schoolStudentIdentityVerified() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true;
+    }
+
     function isStudentInClass(classId) {
       return signedIn()
+        && schoolStudentIdentityVerified()
         && userProfile().data.role == "student"
         && userProfile().data.classId == classId;
     }
@@ -82,7 +89,15 @@ service cloud.firestore {
         && (
           (
             request.resource.data.role == "student"
-            && request.auth.token.firebase.sign_in_provider == "password"
+            && (
+              request.auth.token.firebase.sign_in_provider == "password"
+              || request.auth.token.firebase.sign_in_provider == "google.com"
+            )
+            && request.auth.token.email != null
+            && request.resource.data.email is string
+            && request.resource.data.username is string
+            && request.resource.data.email.lower() == request.auth.token.email.lower()
+            && request.resource.data.username.lower() == request.auth.token.email.lower()
             && request.resource.data.classId is string
             && request.resource.data.joinCode is string
             && validJoinCode(
@@ -190,6 +205,11 @@ service cloud.firestore {
           && request.auth.uid == memberId
           && request.resource.data.userId == memberId
           && request.resource.data.role == "student"
+          && request.auth.token.email != null
+          && request.resource.data.email is string
+          && request.resource.data.username is string
+          && request.resource.data.email.lower() == request.auth.token.email.lower()
+          && request.resource.data.username.lower() == request.auth.token.email.lower()
           && request.resource.data.joinCode is string
           && validJoinCode(classId, request.resource.data.joinCode);
 

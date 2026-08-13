@@ -38,23 +38,24 @@
           <p class="help-text">Your email must first be added to the approved teacher list in Firestore.</p>
         </section>
 
-        <section class="card">
+        <section class="card pupil-auth-card">
           <div class="tab-row" role="tablist">
             <button id="pupilLoginTab" class="tab active" type="button">Pupil sign in</button>
             <button id="pupilRegisterTab" class="tab" type="button">Create pupil account</button>
           </div>
 
           <form id="pupilLoginForm">
-            <label>Class code
-              <input id="loginClassCode" maxlength="8" autocomplete="off" required>
-            </label>
-            <label>Username
-              <input id="loginUsername" maxlength="24" autocomplete="username" required>
+            <button id="pupilGoogleLoginButton" type="button" class="google-button">Continue with Google</button>
+            <div class="auth-divider"><span>or sign in with email</span></div>
+            <label>Email address
+              <input id="loginEmail" type="email" maxlength="120" autocomplete="email" required>
             </label>
             <label>Password
               <input id="loginPassword" type="password" autocomplete="current-password" required>
             </label>
             <button type="submit">Sign in</button>
+            <button id="pupilForgotPasswordButton" type="button" class="text-button auth-help-button">Forgot password?</button>
+            <p class="help-text">Your class code is only needed when you first join a class.</p>
           </form>
 
           <form id="pupilRegisterForm" class="hidden">
@@ -64,34 +65,26 @@
             <label>Display name
               <input id="registerDisplayName" maxlength="40" autocomplete="name" required>
             </label>
-            <label>Choose a username
-              <input id="registerUsername" maxlength="24" autocomplete="username" required>
+            <button id="pupilGoogleRegisterButton" type="button" class="google-button">Continue with Google and join class</button>
+            <div class="auth-divider"><span>or create an email + password account</span></div>
+            <label>Email address
+              <input id="registerEmail" type="email" maxlength="120" autocomplete="email">
             </label>
             <label>Choose a password
-              <input id="registerPassword" type="password" minlength="8" autocomplete="new-password" required>
+              <input id="registerPassword" type="password" minlength="8" autocomplete="new-password">
             </label>
             <label>Confirm password
-              <input id="registerPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required>
+              <input id="registerPasswordConfirm" type="password" minlength="8" autocomplete="new-password">
             </label>
-            <button type="submit">Create account and join class</button>
-            <p class="help-text">Use at least 8 characters. Do not reuse a school or personal password.</p>
+            <button type="submit">Create email account and join class</button>
+            <p class="help-text">Email accounts must be verified before study can begin. If you forget your password later, Firebase will send the reset link directly to this address.</p>
           </form>
         </section>
 
         <section class="card">
-          <h2>Individual learner</h2>
-          <p>Sign in with the personal email and password attached to your individual study licence.</p>
-          <form id="individualLoginForm">
-            <label>Email address
-              <input id="individualLoginEmail" type="email" autocomplete="email" required>
-            </label>
-            <label>Password
-              <input id="individualLoginPassword" type="password" autocomplete="current-password" required>
-            </label>
-            <button type="submit">Sign in to individual study</button>
-            <button id="individualResetPasswordButton" type="button" class="secondary">Send password-reset email</button>
-          </form>
-          <p class="help-text">Founding complimentary accounts are created by the site administrator. Public purchasing will be added at launch.</p>
+          <h2>Personal study licence</h2>
+          <p>Individual learners use the same <strong>Pupil sign in</strong> above.</p>
+          <p class="help-text">Sign in with the email address attached to your personal study licence. Public purchasing will be added at launch.</p>
         </section>
       </div>
     </section>
@@ -945,7 +938,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-3-0.js")
+    import("./app-v8-3-2.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -953,7 +946,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-3-0.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-3-2.js again."
           );
         }
       })
@@ -963,7 +956,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8-3-0.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-3-2.js again and make sure both filenames are exact."
         );
       });
   </script>

@@ -60,6 +60,12 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .hero h2, .card h2, .card h3 { margin-top: 0; }
 .auth-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 18px; }
 .google-button { width: 100%; background: white; color: #263142; border: 2px solid var(--border); }
+
+.auth-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: #697386; font-size: .9rem; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.auth-divider span { white-space: nowrap; }
+.auth-help-button { display: block; margin: 12px auto 0; }
+.pupil-auth-card .google-button { margin-top: 4px; }
 label { display: block; font-weight: 700; margin: 13px 0; }
 input,
 select {
@@ -1568,4 +1574,11 @@ button.good { background:#237b57; color:#fff; }
 }
 @media (max-width: 520px) {
   .daily-mastery-mix { grid-template-columns: 1fr; }
+}
+
+/* v8.3.2 pupil identity / profile actions */
+.profile-heading-actions { margin-top: 0; justify-content: flex-end; }
+.pupil-row-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+@media (max-width: 620px) {
+  .profile-heading-actions { width: 100%; justify-content: flex-start; }
 }
