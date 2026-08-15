@@ -62,6 +62,15 @@ service cloud.firestore {
       return isStudentInClass(classId) || isIndependentScope(classId);
     }
 
+    function canStudentUseArcade(classId) {
+      return isIndependentScope(classId)
+        || (
+          isStudentInClass(classId)
+          && exists(/databases/$(database)/documents/classes/$(classId))
+          && get(/databases/$(database)/documents/classes/$(classId)).data.arcadeOpen == true
+        );
+    }
+
     function isClassOwner(classId) {
       return isTeacher()
         && exists(/databases/$(database)/documents/classes/$(classId))
@@ -320,8 +329,8 @@ service cloud.firestore {
         && userProfile().data.role == "student"
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.classId is string
-        && canStudentUseScope(request.resource.data.classId)
-        && request.resource.data.game in ["debug-rescue", "logic-showdown"]
+        && canStudentUseArcade(request.resource.data.classId)
+        && request.resource.data.game in ["debug-rescue", "logic-showdown", "code-flyer", "trace-race", "binary-bomb", "sql-sprint", "cyber-escape"]
         && request.resource.data.challengeId is string
         && request.resource.data.skillIds is list;
 

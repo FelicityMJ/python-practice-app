@@ -204,6 +204,17 @@
           <button id="closeClassDetailButton" class="secondary">Close</button>
         </div>
         <div id="classStats" class="stats-grid compact"></div>
+        <section class="class-arcade-panel">
+          <div class="class-arcade-copy">
+            <div class="class-arcade-heading"><span class="arcade-big-icon">🕹️</span><div><p class="eyebrow">Computing Arcade</p><h4>Class Arcade access</h4></div></div>
+            <p id="classArcadeDescription" class="help-text">Pupils in this class cannot enter the Computing Arcade until you open it.</p>
+          </div>
+          <div class="class-arcade-actions">
+            <span id="classArcadeStatus" class="status-pill working">CLOSED</span>
+            <button id="toggleClassArcadeButton" type="button" class="success-button">Open Arcade</button>
+            <span id="classArcadeSaveStatus" class="help-text" aria-live="polite"></span>
+          </div>
+        </section>
         <section class="class-focus-panel">
           <div class="class-focus-intro">
             <h4>Spaced-learning focus</h4>
@@ -309,15 +320,15 @@
 
         <div class="subsection-heading">
           <div>
-            <h4>Games Lab overview</h4>
-            <p class="help-text">Debugging and logical-operator evidence contributes to the mastery heatmap and personalised retrieval schedule.</p>
+            <h4>Computing Arcade overview</h4>
+            <p class="help-text">Arcade evidence from unlocked skills contributes to the mastery heatmap and personalised retrieval schedule.</p>
           </div>
           <span id="gameAttemptCount" class="activity-chip">0 responses</span>
         </div>
         <div id="gameClassStats" class="stats-grid compact"></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Pupil</th><th>Debug success</th><th>Logic accuracy</th><th>Debug hints</th><th>Last played</th></tr></thead>
+            <thead><tr><th>Pupil</th><th>Overall</th><th>Debug</th><th>Logic</th><th>Cabinets played</th><th>Last played</th></tr></thead>
             <tbody id="gamePupilStatsBody"></tbody>
           </table>
         </div>
@@ -475,12 +486,12 @@
 
       <section id="gamesLabCard" class="card games-lab-card">
         <div>
-          <p class="eyebrow">SDD Games Lab</p>
-          <h3>Debug and logic practice</h3>
-          <p id="gamesLabDescription">Practise debugging and logical operators through short, adaptive challenges.</p>
+          <p class="eyebrow">Computing Arcade</p>
+          <h3>Play what you are ready for</h3>
+          <p id="gamesLabDescription">Short games unlock alongside your Python, database and computer-systems skills.</p>
           <div id="gamesLabMeta" class="activity-meta"></div>
         </div>
-        <button id="openGamesLabButton" type="button">Open Games Lab</button>
+        <button id="openGamesLabButton" type="button">Open Computing Arcade</button>
       </section>
 
       <section id="peerMarkingCard" class="card peer-marking-card hidden">
@@ -587,24 +598,59 @@
 
     <section id="gamesView" class="hidden">
       <button id="backFromGamesButton" class="secondary">← Back to dashboard</button>
-      <div class="dashboard-heading">
-        <div><p class="eyebrow">SDD Games Lab</p><h2>Practise by playing</h2><p>Game results use the same skills, mastery colours and spaced-learning schedule as the main pathway.</p></div>
+      <div class="dashboard-heading arcade-heading">
+        <div><p class="eyebrow">Computing Arcade</p><h2>Play what you have unlocked</h2><p>Arcade cabinets use the same Computing Science skills as the course. School teachers control when the Arcade is open.</p></div>
+        <span class="arcade-marquee">🕹️ ARCADE</span>
       </div>
+
+      <section class="card arcade-scope-card">
+        <div>
+          <p class="eyebrow">Choose practice</p>
+          <h3>Stay on unlocked skills — or rehearse your next step</h3>
+          <p id="arcadeNextSkillSummary" class="help-text"></p>
+        </div>
+        <div class="arcade-mode-switch">
+          <button id="arcadeUnlockedModeButton" type="button" class="arcade-mode-button active">✓ My unlocked skills</button>
+          <button id="arcadeNextModeButton" type="button" class="arcade-mode-button secondary">→ Practise my next skill</button>
+        </div>
+        <p class="arcade-practice-note">Next-skill practice is deliberately practice-only. It does not let a pupil skip or unlock the main pathway.</p>
+      </section>
+
       <section id="gamesLabSummary" class="stats-grid"></section>
-      <div class="game-menu-grid">
-        <article class="card game-menu-card debug-menu-card">
+      <div class="game-menu-grid arcade-cabinet-grid">
+        <article class="card game-menu-card arcade-cabinet debug-menu-card">
           <span class="game-icon">🦈</span><div><p class="eyebrow">Debug Rescue</p><h3>Save the fish by fixing Python</h3><p>Classify the error, locate the faulty line, repair the program and explain the bug.</p><p id="debugGameUnlockText" class="help-text"></p></div>
           <button id="openDebugGameButton" type="button">Play Debug Rescue</button>
         </article>
-        <article class="card game-menu-card logic-menu-card">
+        <article class="card game-menu-card arcade-cabinet logic-menu-card">
           <span class="game-icon">⚖️</span><div><p class="eyebrow">Logic Showdown</p><h3>Judge Boolean expressions</h3><p>Judge results, complete truth tables, build rules, repair faulty conditions and trace complex logic.</p><p id="logicGameUnlockText" class="help-text"></p></div>
           <button id="openLogicGameButton" type="button">Play Logic Showdown</button>
+        </article>
+        <article class="card game-menu-card arcade-cabinet flyer-cabinet">
+          <span class="game-icon">🐦</span><div><p class="eyebrow">Code Flyer</p><h3>Fly through the correct answer</h3><p>Fast output, tracing and Python decisions from skills you have reached.</p><p id="arcade-code-flyer-text" class="help-text"></p></div>
+          <button id="arcade-code-flyer-button" type="button">Play</button>
+        </article>
+        <article class="card game-menu-card arcade-cabinet race-cabinet">
+          <span class="game-icon">🏁</span><div><p class="eyebrow">Trace Race</p><h3>Keep the runner moving</h3><p>Trace variables, selections, loops and arrays under light time pressure.</p><p id="arcade-trace-race-text" class="help-text"></p></div>
+          <button id="arcade-trace-race-button" type="button">Play</button>
+        </article>
+        <article class="card game-menu-card arcade-cabinet bomb-cabinet">
+          <span class="game-icon">💣</span><div><p class="eyebrow">Binary Bomb</p><h3>Cut the correct wire</h3><p>Binary, denary and data-representation questions unlock with Computer Systems.</p><p id="arcade-binary-bomb-text" class="help-text"></p></div>
+          <button id="arcade-binary-bomb-button" type="button">Play</button>
+        </article>
+        <article class="card game-menu-card arcade-cabinet sql-cabinet">
+          <span class="game-icon">🗃️</span><div><p class="eyebrow">SQL Sprint</p><h3>Race through the database</h3><p>Queries, keys, validation and SQL choices from your reached database work.</p><p id="arcade-sql-sprint-text" class="help-text"></p></div>
+          <button id="arcade-sql-sprint-button" type="button">Play</button>
+        </article>
+        <article class="card game-menu-card arcade-cabinet cyber-cabinet">
+          <span class="game-icon">🔐</span><div><p class="eyebrow">Cyber Escape</p><h3>Unlock the secure route</h3><p>Firewalls, encryption, communications and security choices.</p><p id="arcade-cyber-escape-text" class="help-text"></p></div>
+          <button id="arcade-cyber-escape-button" type="button">Play</button>
         </article>
       </div>
     </section>
 
     <section id="debugGameView" class="hidden">
-      <button id="backFromDebugGameButton" class="secondary">← Back to Games Lab</button>
+      <button id="backFromDebugGameButton" class="secondary">← Back to Arcade</button>
       <section class="card game-shell debug-game-shell">
         <div class="challenge-heading"><div><p class="eyebrow">Debug Rescue</p><h2>Repair the program before the shark reaches the fish</h2><p>Diagnose, locate, repair and explain. Correct behaviour matters — your code does not have to match one exact solution.</p></div><span id="debugProgress" class="progress-badge">Ready</span></div>
         <p id="debugPreviewNotice" class="preview-notice hidden">Preview mode: this lets you test the game, but results will not save until the Errors and Debugging unit has been studied.</p>
@@ -630,7 +676,7 @@
     </section>
 
     <section id="logicGameView" class="hidden">
-      <button id="backFromLogicGameButton" class="secondary">← Back to Games Lab</button>
+      <button id="backFromLogicGameButton" class="secondary">← Back to Arcade</button>
       <section class="card game-shell logic-game-shell">
         <div class="challenge-heading"><div><p class="eyebrow">Logic Showdown · Judge Edition</p><h2>Decide who moves on</h2><p>Work through AND, OR and NOT using truth tables, Python conditions and visual judges.</p></div><span id="logicProgress" class="progress-badge">Ready</span></div>
         <p id="logicPreviewNotice" class="preview-notice hidden">Preview mode: results will not save until the Logical Operators unit has been studied.</p>
@@ -644,6 +690,35 @@
       </section>
     </section>
 
+
+    <section id="quickArcadeView" class="hidden">
+      <button id="backFromQuickArcadeButton" class="secondary">← Back to Arcade</button>
+      <section id="quickArcadeShell" class="card quick-arcade-shell" data-arcade-theme="flyer">
+        <div class="challenge-heading">
+          <div><p id="quickArcadeEyebrow" class="eyebrow">🕹️ Computing Arcade</p><h2 id="quickArcadeTitle">Arcade game</h2><p id="quickArcadeSubtitle">Fast practice from skills you have reached.</p></div>
+          <span id="quickArcadePracticeBadge" class="progress-badge">Unlocked skills</span>
+        </div>
+        <div class="quick-arcade-hud">
+          <span id="quickArcadeProgress">1/8</span>
+          <span id="quickArcadeScore">0 pts</span>
+          <span id="quickArcadeStreak">Streak 0</span>
+        </div>
+        <div class="arcade-track"><div id="quickArcadeTrackFill" class="arcade-track-fill"></div></div>
+        <div id="quickArcadeQuestionPanel">
+          <div class="arcade-screen">
+            <div id="quickArcadeQuestionMedia" class="arcade-question-media hidden"></div>
+            <h3 id="quickArcadePrompt">Question</h3>
+            <div id="quickArcadeOptions" class="arcade-answer-grid"></div>
+          </div>
+          <div class="activity-actions">
+            <button id="submitQuickArcadeAnswerButton" type="button">Lock in answer</button>
+            <button id="nextQuickArcadeQuestionButton" type="button" class="secondary hidden">Next →</button>
+          </div>
+          <div id="quickArcadeFeedback" class="feedback hidden" aria-live="polite"></div>
+        </div>
+        <div id="quickArcadeSummary" class="hidden"></div>
+      </section>
+    </section>
 
     <section id="revisionView" class="hidden">
       <button id="backFromRevisionButton" class="secondary">← Back to dashboard</button>
@@ -901,7 +976,7 @@
   </div>
 
   <footer>
-    <p>Nat 5 Computing prototype v8.3.0 · Mastery Edition · Copyright © 2026 Felicity Miller. All rights reserved.</p>
+    <p>Nat 5 Computing prototype v8.4.0 · Mastery + Arcade Edition · Copyright © 2026 Felicity Miller. All rights reserved.</p>
   </footer>
 
 
@@ -938,7 +1013,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-3-2.js")
+    import("./app-v8-4-0.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -946,7 +1021,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-3-2.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-4-0.js again."
           );
         }
       })
@@ -956,7 +1031,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8-3-2.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-4-0.js again and make sure both filenames are exact."
         );
       });
   </script>
