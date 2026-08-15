@@ -58,7 +58,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 }
 .hero { margin-bottom: 18px; }
 .hero h2, .card h2, .card h3 { margin-top: 0; }
-.auth-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 18px; }
+.auth-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
 .google-button { width: 100%; background: white; color: #263142; border: 2px solid var(--border); }
 
 .auth-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: #697386; font-size: .9rem; }
