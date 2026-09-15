@@ -762,19 +762,101 @@
         <div id="revisionSetupPanel">
           <div class="revision-setup-grid">
             <label>Course area<select id="revisionAreaFilter"></select></label>
-            <label>Session type<select id="revisionModeInput"><option value="due">Due for review</option><option value="weak">Weak topics</option><option value="exam">Exam-style mix</option><option value="choose">Choose my own</option></select></label>
-            <label>Number of cards<select id="revisionLengthInput"><option value="5">5 cards</option><option value="10" selected>10 cards</option><option value="20">20 cards</option></select></label>
+            <label>Session type
+              <select id="revisionModeInput">
+                <option value="smart" selected>Smart mix</option>
+                <option value="due">Due / difficult first</option>
+                <option value="random">Random</option>
+                <option value="weak">Weak topics first</option>
+                <option value="exam">Exam-style mix</option>
+                <option value="choose">Choose my own</option>
+              </select>
+            </label>
+            <label>Number of cards
+              <select id="revisionLengthInput">
+                <option value="5">5 cards</option>
+                <option value="10" selected>10 cards</option>
+                <option value="20">20 cards</option>
+                <option value="9999">All selected cards</option>
+              </select>
+            </label>
           </div>
-          <p id="revisionSetupSummary" class="revision-setup-summary"></p>
-          <h3>Select topics</h3><div id="revisionTopicChoices" class="revision-topic-grid"></div>
+
+          <div class="revision-filter-row">
+            <label class="revision-switch"><input id="revisionIncludeAllCourse" type="checkbox" checked> <span>Include all 197 approved course cards, including topics not yet completed</span></label>
+            <label class="revision-switch"><input id="revisionIncludePersonal" type="checkbox" checked> <span>Include my personal flashcards</span></label>
+          </div>
+
+          <div class="revision-topic-heading">
+            <div><h3>Select topics</h3><p id="revisionSetupSummary" class="revision-setup-summary"></p></div>
+            <button id="revisionSelectAllTopicsButton" type="button" class="secondary">Clear all topics</button>
+          </div>
+          <div id="revisionTopicChoices" class="revision-topic-grid"></div>
           <div class="activity-actions"><button id="startRevisionSessionButton" type="button">Start revision</button></div>
           <div id="revisionSetupFeedback" class="feedback hidden"></div>
+
+          <section class="personal-flashcards-manager" aria-labelledby="personalFlashcardsTitle">
+            <div class="personal-flashcards-heading">
+              <div>
+                <p class="eyebrow">My flashcards</p>
+                <h3 id="personalFlashcardsTitle">Create your own revision cards</h3>
+                <p class="help-text">Your cards are saved to your account, so they follow you between school and home devices.</p>
+              </div>
+              <div class="personal-flashcards-heading-actions">
+                <span id="personalFlashcardCount" class="progress-badge">0 cards</span>
+                <button id="showPersonalFlashcardFormButton" type="button">+ Add flashcard</button>
+              </div>
+            </div>
+
+            <div id="personalFlashcardFormPanel" class="personal-flashcard-form-panel hidden">
+              <form id="personalFlashcardForm">
+                <input id="personalFlashcardEditDocId" type="hidden">
+                <h4 id="personalFlashcardFormTitle">New personal flashcard</h4>
+                <div class="personal-flashcard-form-grid">
+                  <label>Course area
+                    <select id="personalFlashcardArea">
+                      <option value="sdd">Software Design & Development</option>
+                      <option value="ddd">Database Design & Development</option>
+                      <option value="cs">Computer Systems</option>
+                    </select>
+                  </label>
+                  <label>Topic
+                    <select id="personalFlashcardTopicSelect" required></select>
+                  </label>
+                  <label id="personalFlashcardNewTopicLabel" class="hidden">New topic name
+                    <input id="personalFlashcardNewTopic" type="text" maxlength="80" placeholder="e.g. Arrays exam traps">
+                  </label>
+                </div>
+                <label>Question
+                  <textarea id="personalFlashcardPrompt" class="written-response" required placeholder="What should you be able to recall?"></textarea>
+                </label>
+                <label>Accepted answer
+                  <textarea id="personalFlashcardAnswer" class="written-response" required placeholder="Write the answer you want to compare against."></textarea>
+                </label>
+                <label>Key marking points <span class="muted">(optional — one point per line)</span>
+                  <textarea id="personalFlashcardPoints" class="written-response" placeholder="Point 1&#10;Point 2&#10;Point 3"></textarea>
+                </label>
+                <div class="activity-actions">
+                  <button id="savePersonalFlashcardButton" type="submit">Save flashcard</button>
+                  <button id="cancelPersonalFlashcardEditButton" type="button" class="secondary hidden">Cancel edit</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="personal-flashcard-tools">
+              <button id="exportPersonalFlashcardsButton" type="button" class="secondary">Export my cards</button>
+              <label class="button-like secondary" for="importPersonalFlashcardsInput">Import cards</label>
+              <input id="importPersonalFlashcardsInput" type="file" accept=".json,application/json" class="visually-hidden">
+            </div>
+            <div id="personalFlashcardFeedback" class="feedback hidden" aria-live="polite"></div>
+            <div id="personalFlashcardList" class="personal-flashcard-list"></div>
+          </section>
         </div>
         <div id="revisionCardPanel" class="hidden">
           <div id="revisionCardMeta" class="spaced-question-meta"></div>
           <h3 id="revisionPrompt" class="revision-prompt"></h3>
           <label>Type everything you can remember<textarea id="revisionAnswerInput" class="written-response revision-answer" placeholder="Answer from memory before revealing the accepted wording."></textarea></label>
-          <div class="activity-actions"><button id="compareRevisionAnswerButton" type="button">Compare answer</button></div>
+          <div class="activity-actions"><button id="compareRevisionAnswerButton" type="button">Compare answer</button><button id="skipRevisionAnswerButton" type="button" class="secondary">Skip for now</button></div>
           <div id="revisionComparePanel" class="revision-compare-grid hidden">
             <section><h4>Your answer</h4><div id="revisionOwnAnswerMirror" class="revision-answer-panel"></div></section>
             <section><h4>Accepted answer</h4><pre id="revisionAcceptedAnswer" class="revision-answer-panel accepted"></pre></section>
@@ -1048,7 +1130,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-4-3.js")
+    import("./app-v8-4-4.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -1056,7 +1138,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-4-3.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-4-4.js again."
           );
         }
       })

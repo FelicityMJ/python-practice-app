@@ -323,6 +323,39 @@ service cloud.firestore {
 
 
 
+    match /personalRevisionCards/{cardDocId} {
+      allow get, list: if signedIn()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if signedIn()
+        && userProfile().data.role == "student"
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.id is string
+        && request.resource.data.areaId in ["sdd", "ddd", "cs"]
+        && request.resource.data.unitId is string
+        && request.resource.data.customTopic is string
+        && request.resource.data.prompt is string
+        && request.resource.data.answer is string
+        && request.resource.data.points is list;
+
+      allow update: if signedIn()
+        && userProfile().data.role == "student"
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.areaId in ["sdd", "ddd", "cs"]
+        && request.resource.data.unitId is string
+        && request.resource.data.customTopic is string
+        && request.resource.data.prompt is string
+        && request.resource.data.answer is string
+        && request.resource.data.points is list;
+
+      allow delete: if signedIn()
+        && userProfile().data.role == "student"
+        && resource.data.userId == request.auth.uid;
+    }
+
+
     match /gameAttempts/{attemptId} {
       allow create: if signedIn()
         && userProfile().data.role == "student"

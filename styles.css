@@ -1748,3 +1748,32 @@ button.good { background:#237b57; color:#fff; }
   .arcade-cabinet-grid, .arcade-answer-grid { grid-template-columns:1fr; }
   .quick-arcade-hud { grid-template-columns:1fr 1fr 1fr; font-size:.86rem; }
 }
+
+/* v8.4.4 — personal flashcards + standalone flashcard feature parity */
+.revision-filter-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:14px 0 18px; }
+.revision-switch { display:flex; gap:9px; align-items:flex-start; padding:11px 12px; border:1px solid #d6dceb; border-radius:10px; background:#f8f9fd; }
+.revision-switch input { margin-top:3px; }
+.revision-topic-heading { display:flex; justify-content:space-between; gap:16px; align-items:flex-end; margin-top:14px; }
+.revision-topic-heading h3 { margin-bottom:6px; }
+.revision-topic-choice small { display:block; color:#667085; margin-top:3px; }
+.personal-card-chip { background:#f3e9fb; border-color:#d6bde8; }
+
+.personal-flashcards-manager { margin-top:30px; padding-top:24px; border-top:2px solid #e3e7f0; }
+.personal-flashcards-heading { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; }
+.personal-flashcards-heading-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+.personal-flashcard-form-panel { margin:18px 0; padding:18px; border:1px solid #d6dceb; border-radius:14px; background:#f8f9fd; }
+.personal-flashcard-form-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.personal-flashcard-tools { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; }
+.personal-flashcard-list { display:grid; gap:10px; margin-top:14px; }
+.personal-flashcard-row { display:flex; justify-content:space-between; gap:16px; align-items:center; padding:13px 14px; border:1px solid #d6dceb; border-radius:12px; background:#fff; }
+.personal-flashcard-meta { display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+.personal-flashcard-actions { display:flex; gap:8px; flex:0 0 auto; }
+.button-like { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:9px 14px; border-radius:9px; border:1px solid #b9c2d5; cursor:pointer; font-weight:600; }
+.button-like.secondary { background:#fff; color:#1f2a44; }
+.visually-hidden { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+
+@media (max-width:760px){
+  .revision-filter-row,.personal-flashcard-form-grid{grid-template-columns:1fr}
+  .revision-topic-heading,.personal-flashcards-heading,.personal-flashcard-row{align-items:stretch;flex-direction:column}
+  .personal-flashcards-heading-actions,.personal-flashcard-actions{justify-content:flex-start}
+}
