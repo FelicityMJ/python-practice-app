@@ -31,25 +31,59 @@
       </div>
 
       <div class="auth-grid">
-        <section class="card">
+        <section class="card teacher-auth-card">
           <h2>Teacher</h2>
-          <p>Use an approved Google account to open your teacher dashboard.</p>
-          <button id="teacherGoogleButton" class="google-button">Continue with Google</button>
-          <p class="help-text">Your email must first be added to the approved teacher list in Firestore.</p>
+          <p>Sign in with your approved school email address.</p>
+          <div class="tab-row" role="tablist" aria-label="Teacher access">
+            <button id="teacherLoginTab" class="tab active" type="button">Sign in</button>
+            <button id="teacherRegisterTab" class="tab" type="button">First-time setup</button>
+          </div>
+
+          <form id="teacherLoginForm">
+            <label>School email address
+              <input id="teacherLoginEmail" type="email" maxlength="120" autocomplete="email" required>
+            </label>
+            <label>Password
+              <input id="teacherLoginPassword" type="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit">Sign in</button>
+            <button id="teacherForgotPasswordButton" type="button" class="text-button auth-help-button">Forgot password?</button>
+          </form>
+
+          <form id="teacherRegisterForm" class="hidden">
+            <label>Approved school email address
+              <input id="teacherRegisterEmail" type="email" maxlength="120" autocomplete="email" required>
+            </label>
+            <label>Create password
+              <input id="teacherRegisterPassword" type="password" minlength="8" autocomplete="new-password" required>
+            </label>
+            <label>Confirm password
+              <input id="teacherRegisterPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required>
+            </label>
+            <button type="submit">Create teacher account</button>
+            <p class="help-text">Your email must first be added to the approved teacher list. We will then send a verification email.</p>
+          </form>
         </section>
 
         <section class="card pupil-auth-card">
           <h2>Classroom pupil</h2>
-          <p>Classroom accounts use Google sign-in. You do not need a separate Nat 5 Computing password.</p>
+          <p>Use your school email address and your Nat 5 Computing password.</p>
           <div class="tab-row" role="tablist" aria-label="Classroom pupil access">
             <button id="pupilLoginTab" class="tab active" type="button">Sign in</button>
             <button id="pupilRegisterTab" class="tab" type="button">Join a class</button>
           </div>
 
-          <div id="pupilLoginForm">
-            <button id="pupilGoogleLoginButton" type="button" class="google-button">Continue with Google</button>
-            <p class="help-text">Already joined a class? Use the same Google account each time. Your class code is only needed when you first join.</p>
-          </div>
+          <form id="pupilLoginForm">
+            <label>School email address
+              <input id="pupilLoginEmail" type="email" maxlength="120" autocomplete="email" required>
+            </label>
+            <label>Password
+              <input id="pupilLoginPassword" type="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit">Sign in</button>
+            <button id="pupilForgotPasswordButton" type="button" class="text-button auth-help-button">Forgot password?</button>
+            <p class="help-text">Already joined a class? Use the same school email each time. Your class code is only needed the first time.</p>
+          </form>
 
           <form id="pupilRegisterForm" class="hidden">
             <label>Class code
@@ -58,8 +92,17 @@
             <label>Display name
               <input id="registerDisplayName" maxlength="40" autocomplete="name" required>
             </label>
-            <button id="pupilGoogleRegisterButton" type="button" class="google-button">Continue with Google and join class</button>
-            <p class="help-text">Your Google account identifies you securely, so there is no email-verification step and no Nat 5 Computing password to remember.</p>
+            <label>School email address
+              <input id="registerEmail" type="email" maxlength="120" autocomplete="email" required>
+            </label>
+            <label>Create password
+              <input id="registerPassword" type="password" minlength="8" autocomplete="new-password" required>
+            </label>
+            <label>Confirm password
+              <input id="registerPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required>
+            </label>
+            <button type="submit">Join class</button>
+            <p class="help-text">We will send a verification link to your school email. After you verify it, come back and sign in.</p>
           </form>
         </section>
 
@@ -74,9 +117,9 @@
               <input id="loginPassword" type="password" autocomplete="current-password" required>
             </label>
             <button type="submit">Sign in to Personal Study</button>
-            <button id="pupilForgotPasswordButton" type="button" class="text-button auth-help-button">Forgot your Personal Study password?</button>
+            <button id="individualForgotPasswordButton" type="button" class="text-button auth-help-button">Forgot your Personal Study password?</button>
           </form>
-          <p class="help-text">Password-reset emails are only for Personal Study accounts. Classroom pupils should use Continue with Google above.</p>
+          <p class="help-text">Personal Study accounts are separate from classroom accounts.</p>
         </section>
       </div>
     </section>
@@ -1005,7 +1048,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-4-1.js")
+    import("./app-v8-4-2.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -1013,7 +1056,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-4-1.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-4-2.js again."
           );
         }
       })
@@ -1023,7 +1066,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8-4-1.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-4-2.js again and make sure both filenames are exact."
         );
       });
   </script>

@@ -16,15 +16,23 @@ service cloud.firestore {
         && userProfile().data.role == "teacher";
     }
 
-    function isGoogleSchoolStudentIdentity() {
+    function isSupportedSchoolIdentity() {
       return signedIn()
         && request.auth.token.email != null
-        && request.auth.token.firebase.sign_in_provider == "google.com";
+        && request.auth.token.firebase.sign_in_provider in ["password", "google.com"];
+    }
+
+    function isVerifiedSchoolIdentity() {
+      return isSupportedSchoolIdentity()
+        && (
+          request.auth.token.firebase.sign_in_provider == "google.com"
+          || request.auth.token.email_verified == true
+        );
     }
 
     function isStudentInClass(classId) {
       return signedIn()
-        && isGoogleSchoolStudentIdentity()
+        && isVerifiedSchoolIdentity()
         && userProfile().data.role == "student"
         && userProfile().data.classId == classId;
     }
@@ -98,8 +106,7 @@ service cloud.firestore {
         && (
           (
             request.resource.data.role == "student"
-            && request.auth.token.firebase.sign_in_provider == "google.com"
-            && request.auth.token.email != null
+            && isSupportedSchoolIdentity()
             && request.resource.data.email is string
             && request.resource.data.username is string
             && request.resource.data.email.lower() == request.auth.token.email.lower()
@@ -114,8 +121,8 @@ service cloud.firestore {
           ||
           (
             request.resource.data.role == "teacher"
-            && request.auth.token.firebase.sign_in_provider == "google.com"
-            && request.auth.token.email != null
+            && isSupportedSchoolIdentity()
+            && request.auth.token.email_verified == true
             && exists(
               /databases/$(database)/documents/teacherInvites/$(request.auth.token.email.lower())
             )
@@ -211,8 +218,7 @@ service cloud.firestore {
           && request.auth.uid == memberId
           && request.resource.data.userId == memberId
           && request.resource.data.role == "student"
-          && request.auth.token.firebase.sign_in_provider == "google.com"
-          && request.auth.token.email != null
+          && isSupportedSchoolIdentity()
           && request.resource.data.email is string
           && request.resource.data.username is string
           && request.resource.data.email.lower() == request.auth.token.email.lower()
