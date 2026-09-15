@@ -61,7 +61,7 @@
               <input id="teacherRegisterPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required>
             </label>
             <button type="submit">Create teacher account</button>
-            <p class="help-text">Your email must first be added to the approved teacher list. We will then send a verification email.</p>
+            <p class="help-text">Your email must first be added to the approved teacher list. You can create your account immediately once your email is on the approved teacher list.</p>
           </form>
         </section>
 
@@ -102,7 +102,7 @@
               <input id="registerPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required>
             </label>
             <button type="submit">Join class</button>
-            <p class="help-text">We will send a verification link to your school email. After you verify it, come back and sign in.</p>
+            <p class="help-text">Your school email is used as your Nat 5 Computing username. No email verification is required.</p>
           </form>
         </section>
 
@@ -1048,7 +1048,7 @@
   </script>
 
   <script type="module">
-    import("./app-v8-4-2.js")
+    import("./app-v8-4-3.js")
       .then(function () {
         window.clearTimeout(window.PYTHON_PRACTICE_LOAD_TIMER);
         if (window.PYTHON_PRACTICE_READY) {
@@ -1056,7 +1056,7 @@
         } else {
           showApplicationLoadingMessage(
             "The application file loaded but could not finish starting. " +
-            "Open Developer Tools and check the Console, or upload index.html and app-v8-4-2.js again."
+            "Open Developer Tools and check the Console, or upload index.html and app-v8-4-3.js again."
           );
         }
       })
@@ -1066,7 +1066,7 @@
         var detail = error && error.message ? error.message : String(error);
         showApplicationLoadingMessage(
           "The application could not start. Technical detail: " + detail +
-          ". Upload index.html and app-v8-4-2.js again and make sure both filenames are exact."
+          ". Upload index.html and app-v8-4-3.js again and make sure both filenames are exact."
         );
       });
   </script>

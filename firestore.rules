@@ -22,17 +22,13 @@ service cloud.firestore {
         && request.auth.token.firebase.sign_in_provider in ["password", "google.com"];
     }
 
-    function isVerifiedSchoolIdentity() {
-      return isSupportedSchoolIdentity()
-        && (
-          request.auth.token.firebase.sign_in_provider == "google.com"
-          || request.auth.token.email_verified == true
-        );
+    function isSchoolIdentity() {
+      return isSupportedSchoolIdentity();
     }
 
     function isStudentInClass(classId) {
       return signedIn()
-        && isVerifiedSchoolIdentity()
+        && isSchoolIdentity()
         && userProfile().data.role == "student"
         && userProfile().data.classId == classId;
     }
@@ -122,7 +118,6 @@ service cloud.firestore {
           (
             request.resource.data.role == "teacher"
             && isSupportedSchoolIdentity()
-            && request.auth.token.email_verified == true
             && exists(
               /databases/$(database)/documents/teacherInvites/$(request.auth.token.email.lower())
             )
